@@ -128,7 +128,7 @@ Options développeur : `--data <dossier>` (bibliothèque séparée / portable), 
 Deux dépôts GitHub :
 
 - **`arcadia`** (privé) : le code. Personne d'autre que vous ne le voit.
-- **`arcadia-releases`** (public) : uniquement les versions publiées (Releases avec `Arcadia.exe`), sans code. Vos amis y téléchargent Arcadia, et Arcadia y vérifie les mises à jour (un dépôt privé exigerait un mot de passe dans l'exe, ce qui n'est pas sûr). Le texte de sa page d'accueil est prêt dans `docs/README-releases.md`.
+- **`arcadia-releases`** (public) : uniquement les versions publiées (Releases avec `Arcadia.exe`), sans code. Vos amis y téléchargent Arcadia, et Arcadia y vérifie les mises à jour (un dépôt privé exigerait un mot de passe dans l'exe, ce qui n'est pas sûr). Sa page d'accueil (README et captures) est dans `docs/releases-page/`. Les captures se refont avec une bibliothèque de démonstration : `Arcadia.exe --data <dossier> --make-demo <dossier>` (jeux fictifs, illustrations dessinées par Arcadia), puis `toolssnapshot.ps1` avec `ARCADIA_DISPLAY_NAME=Joueur`.
 
 Le dépôt des versions est indiqué dans `src/Arcadia/Arcadia.csproj` : `<UpdateRepository>pseudo/arcadia-releases</UpdateRepository>`.
 

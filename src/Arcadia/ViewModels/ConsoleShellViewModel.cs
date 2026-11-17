@@ -42,7 +42,8 @@ public partial class ConsoleShellViewModel : ObservableObject
     {
         _main = main;
         _clock.Tick += (_, _) => UpdateClock();
-        UserName = Environment.UserName;
+        // ARCADIA_DISPLAY_NAME: name shown by the themes instead of the Windows account (demo screenshots)
+        UserName = Environment.GetEnvironmentVariable("ARCADIA_DISPLAY_NAME") is { Length: > 0 } shown ? shown : Environment.UserName;
         UserInitial = string.IsNullOrEmpty(UserName) ? "A" : char.ToUpper(UserName[0]).ToString();
         Actions = new List<ShellAction>
         {

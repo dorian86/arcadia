@@ -40,6 +40,7 @@ public partial class App : Application
         public bool Perf;
         public bool Hover;
         public string? Theme;
+        public string? MakeDemo;
         public int? UpdatedFrom;
         public string? Keys;
         public string? Mouse;
@@ -72,6 +73,7 @@ public partial class App : Application
                     case "--perf": o.Perf = true; break;
                     case "--hover": o.Hover = true; break;
                     case "--theme": o.Theme = Next(); break;
+                    case "--make-demo": o.MakeDemo = Next(); break;
                     case "--updated": o.UpdatedFrom = int.TryParse(Next(), out var pid) ? pid : 0; break;
                     case "--keys": o.Keys = Next(); break;
                     case "--mouse": o.Mouse = Next(); break;
@@ -106,6 +108,14 @@ public partial class App : Application
         if (options.Uninstall)
         {
             RunUninstall();
+            return;
+        }
+
+        if (options.MakeDemo != null)
+        {
+            // dev tool: build a library of fictional games for public screenshots, then quit
+            DemoLibrary.Build(options.MakeDemo);
+            Shutdown();
             return;
         }
 
