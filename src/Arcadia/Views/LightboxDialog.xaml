@@ -1,0 +1,23 @@
+<UserControl x:Class="Arcadia.Views.LightboxDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Arcadia.Controls">
+    <Grid MaxWidth="1500">
+        <Border CornerRadius="16" Background="{StaticResource Surface}" MinWidth="640" MinHeight="360">
+            <Grid>
+                <c:Spinner Width="30" Height="30"/>
+                <Image Stretch="Uniform" MaxHeight="820" c:ImageLoader.Source="{Binding Current.Full}" c:ImageLoader.DecodeWidth="1600"/>
+            </Grid>
+        </Border>
+        <Button Style="{StaticResource GlassButton}" c:Ui.Glyph="&#xE76B;" Width="48" Height="48" Padding="0" c:Ui.CornerRadius="24"
+                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-72,0,0,0" Command="{Binding PreviousCommand}" ToolTip="Précédente (←)"/>
+        <Button Style="{StaticResource GlassButton}" c:Ui.Glyph="&#xE76C;" Width="48" Height="48" Padding="0" c:Ui.CornerRadius="24"
+                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-72,0" Command="{Binding NextCommand}" ToolTip="Suivante (→)"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,-52">
+            <Border CornerRadius="12" Background="#CC141822" Padding="14,6">
+                <TextBlock Text="{Binding Position}" Foreground="{StaticResource TextPrimary}"/>
+            </Border>
+            <Button Style="{StaticResource GlassButton}" Content="Fermer" c:Ui.Glyph="&#xE711;" Height="34" Margin="10,0,0,0" Command="{Binding CloseCommand}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

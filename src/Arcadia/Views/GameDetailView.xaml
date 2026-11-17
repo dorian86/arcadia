@@ -1,0 +1,395 @@
+<UserControl x:Class="Arcadia.Views.GameDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Arcadia.Controls"
+             xmlns:vm="clr-namespace:Arcadia.ViewModels"
+             xmlns:m="clr-namespace:Arcadia.Models"
+             Background="{StaticResource Bg0}">
+    <UserControl.Resources>
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background" Value="#B3141822"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Stroke}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="20,16"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+        </Style>
+        <Style x:Key="StatLabel" TargetType="TextBlock" BasedOn="{StaticResource Overline}">
+            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="StatValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+            <Setter Property="FontSize" Value="19"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+        <Style x:Key="InfoKey" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="InfoValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+        <Style x:Key="Chip" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="#26FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Ambient light tinted by the cover colour -->
+        <Ellipse Width="1500" Height="1100" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-420,-520,0"
+                 Fill="{Binding AccentColor, Converter={StaticResource HexToGlow}}" Opacity="0.35" IsHitTestVisible="False"/>
+        <Rectangle Fill="{DynamicResource GrainBrush}" IsHitTestVisible="False"/>
+
+        <ScrollViewer x:Name="Scroller" c:SmoothScroll.IsEnabled="True" VerticalScrollBarVisibility="Auto" Focusable="False">
+            <Grid>
+                <!-- Backdrop: hero artwork, or the cover decoded tiny & stretched (soft blur without BlurEffect) -->
+                <Grid Height="600" VerticalAlignment="Top" ClipToBounds="True">
+                    <Border c:ImageLoader.Source="{Binding HeroFullPath}" c:ImageLoader.DecodeWidth="1920" c:ImageLoader.AlignY="Top"/>
+                    <Border Opacity="0.55" RenderOptions.BitmapScalingMode="Linear"
+                            c:ImageLoader.Source="{Binding CoverFullPath}" c:ImageLoader.DecodeWidth="28"
+                            Visibility="{Binding HasHero, Converter={StaticResource InvBoolToVis}}"/>
+                    <c:TrailerPlayer x:Name="Trailer" TargetOpacity="0.95"/>
+                    <Rectangle>
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#400A0C11" Offset="0"/>
+                                <GradientStop Color="#800A0C11" Offset="0.45"/>
+                                <GradientStop Color="#FF0A0C11" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Rectangle>
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#B30A0C11" Offset="0"/>
+                                <GradientStop Color="#000A0C11" Offset="0.7"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Grid>
+
+                <StackPanel Margin="56,0,56,64">
+                    <Button x:Name="TrailerToggle" Style="{StaticResource GlassButton}" c:Ui.Glyph="&#xE769;" Content="Bande-annonce" Height="36" Padding="14,0"
+                            HorizontalAlignment="Right" Margin="0,51,0,-87" FontSize="13" Visibility="Collapsed" Click="TrailerToggle_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Mettre en pause / reprendre la bande-annonce"/>
+                    <Button Style="{StaticResource GlassButton}" c:Ui.Glyph="&#xE72B;" Content="Retour" HorizontalAlignment="Left"
+                            Margin="0,50,0,0" Height="38" Padding="14,0" WindowChrome.IsHitTestVisibleInChrome="True"
+                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=CloseDetailCommand}" ToolTip="Retour (Échap)"/>
+
+                    <!-- Title block -->
+                    <Grid Margin="0,140,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="270"/>
+                            <ColumnDefinition Width="44"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid x:Name="CoverBlock" VerticalAlignment="Bottom">
+                            <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+                            <Ellipse Fill="{Binding AccentColor, Converter={StaticResource HexToGlow}}" Margin="-90" Opacity="0.55"/>
+                            <Border Background="{DynamicResource CardShadowBrush}" Margin="-46,-30,-46,-64"/>
+                            <Border CornerRadius="16" Background="{Binding Name, Converter={StaticResource NameToBrush}}">
+                                <c:AspectRatioBox Ratio="1.5">
+                                    <Grid>
+                                        <Image Width="92" Height="92" c:ImageLoader.Source="{Binding IconFullPath}" c:ImageLoader.DecodeWidth="128"/>
+                                        <Border CornerRadius="16" c:ImageLoader.Source="{Binding CoverFullPath}" c:ImageLoader.DecodeWidth="540"/>
+                                        <Border CornerRadius="16" BorderThickness="1" BorderBrush="#26FFFFFF"/>
+                                    </Grid>
+                                </c:AspectRatioBox>
+                            </Border>
+                        </Grid>
+
+                        <StackPanel x:Name="InfoBlock" Grid.Column="2" VerticalAlignment="Bottom">
+                            <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
+                            <!-- chips -->
+                            <WrapPanel Margin="0,0,0,14">
+                                <Border Style="{StaticResource Chip}">
+                                    <TextBlock Text="{Binding PlatformLabel}" FontSize="11.5" FontWeight="SemiBold" Foreground="White"/>
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding Collections}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource Chip}" Background="{DynamicResource AccentSoft}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE8EC;" Style="{StaticResource Glyph}" FontSize="10" Foreground="White" Margin="0,1,6,0"/>
+                                                    <TextBlock Text="{Binding}" FontSize="11.5" FontWeight="SemiBold" Foreground="White"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </WrapPanel>
+
+                            <Image MaxHeight="130" MaxWidth="540" HorizontalAlignment="Left" Stretch="Uniform" Margin="0,0,0,6"
+                                   c:ImageLoader.Source="{Binding LogoFullPath}" c:ImageLoader.DecodeWidth="640"
+                                   Visibility="{Binding HasLogo, Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="{Binding Name}" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" Foreground="White" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="50"/>
+                                        <Setter Property="LineHeight" Value="58"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasLogo}" Value="True">
+                                                <Setter Property="FontSize" Value="18"/>
+                                                <Setter Property="LineHeight" Value="24"/>
+                                                <Setter Property="Foreground" Value="#D9FFFFFF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Margin" Value="0,10,0,0"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding MetaLine}" FontSize="14" Foreground="#B3FFFFFF" Margin="0,10,0,0" TextWrapping="Wrap"
+                                       Visibility="{Binding MetaLine, Converter={StaticResource NullToVis}}"/>
+
+                            <!-- Missing warning -->
+                            <Border Margin="0,20,0,0" CornerRadius="12" Background="{StaticResource WarningSoft}" BorderBrush="#59FFB547" BorderThickness="1"
+                                    Padding="16,12" HorizontalAlignment="Left" MaxWidth="680"
+                                    Visibility="{Binding IsMissing, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="&#xE7BA;" Style="{StaticResource Glyph}" FontSize="18" Foreground="{StaticResource Warning}" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                                    <StackPanel Grid.Column="1" Margin="14,0,18,0">
+                                        <TextBlock Text="Fichier de lancement introuvable" FontWeight="SemiBold" Foreground="{StaticResource Warning}"/>
+                                        <TextBlock Text="Le jeu a peut-être été déplacé, désinstallé, ou se trouve sur un disque déconnecté." FontSize="12.5"
+                                                   Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Localiser…" c:Ui.Glyph="&#xE721;" VerticalAlignment="Center"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=LocateCommand}" CommandParameter="{Binding}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Actions -->
+                            <StackPanel x:Name="ActionsBlock" Orientation="Horizontal" Margin="0,26,0,0">
+                                <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
+                                <Button Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=PlayCommand}" CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PlayButton}">
+                                            <Setter Property="Content" Value="JOUER"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                    <Setter Property="Content" Value="EN COURS"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Margin="16,0,0,0" Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=ToggleFavoriteCommand}" CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource IconButtonLarge}">
+                                            <Setter Property="c:Ui.Glyph" Value="&#xEB51;"/>
+                                            <Setter Property="ToolTip" Value="Ajouter aux favoris"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                    <Setter Property="c:Ui.Glyph" Value="&#xEB52;"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Favorite}"/>
+                                                    <Setter Property="ToolTip" Value="Retirer des favoris"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Style="{StaticResource IconButtonLarge}" c:Ui.Glyph="&#xE8EC;" Margin="10,0,0,0" ToolTip="Collections"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=ManageCollectionsCommand}" CommandParameter="{Binding}"/>
+                                <Button Style="{StaticResource IconButtonLarge}" c:Ui.Glyph="&#xE70F;" Margin="10,0,0,0" ToolTip="Modifier"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=EditCommand}" CommandParameter="{Binding}"/>
+                                <Button Style="{StaticResource IconButtonLarge}" c:Ui.Glyph="&#xEB9F;" Margin="10,0,0,0" ToolTip="Changer la jaquette"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SearchCoverCommand}" CommandParameter="{Binding}"/>
+                                <Button x:Name="MoreButton" Style="{StaticResource IconButtonLarge}" c:Ui.Glyph="&#xE712;" Margin="10,0,0,0" ToolTip="Plus d'options"
+                                        Click="MoreButton_Click"/>
+                            </StackPanel>
+
+                            <!-- Progress + rating -->
+                            <WrapPanel Margin="0,22,0,0" VerticalAlignment="Center">
+                                <Button Style="{StaticResource StatusPill}" c:Ui.Glyph="&#xE728;" Content="À faire"
+                                        c:Ui.IsActive="{Binding Status, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:GameStatus.Backlog}, Mode=OneWay}"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetStatusCommand}" CommandParameter="{x:Static m:GameStatus.Backlog}"/>
+                                <Button Style="{StaticResource StatusPill}" c:Ui.Glyph="&#xE768;" Content="En cours"
+                                        c:Ui.IsActive="{Binding Status, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:GameStatus.Playing}, Mode=OneWay}"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetStatusCommand}" CommandParameter="{x:Static m:GameStatus.Playing}"/>
+                                <Button Style="{StaticResource StatusPill}" c:Ui.Glyph="&#xE73E;" Content="Terminé"
+                                        c:Ui.IsActive="{Binding Status, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:GameStatus.Finished}, Mode=OneWay}"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetStatusCommand}" CommandParameter="{x:Static m:GameStatus.Finished}"/>
+                                <Button Style="{StaticResource StatusPill}" c:Ui.Glyph="&#xE711;" Content="Abandonné"
+                                        c:Ui.IsActive="{Binding Status, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:GameStatus.Abandoned}, Mode=OneWay}"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetStatusCommand}" CommandParameter="{x:Static m:GameStatus.Abandoned}"/>
+                                <Border Width="1" Height="24" Background="#33FFFFFF" Margin="10,0,14,0" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ToolTip="Votre note (cliquez à nouveau pour l'effacer)">
+                                    <Button Style="{StaticResource StarButton}" CommandParameter="1" Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetRatingCommand}"
+                                            c:Ui.IsActive="{Binding Rating, Converter={StaticResource AtLeast}, ConverterParameter=1}"/>
+                                    <Button Style="{StaticResource StarButton}" CommandParameter="2" Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetRatingCommand}"
+                                            c:Ui.IsActive="{Binding Rating, Converter={StaticResource AtLeast}, ConverterParameter=2}"/>
+                                    <Button Style="{StaticResource StarButton}" CommandParameter="3" Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetRatingCommand}"
+                                            c:Ui.IsActive="{Binding Rating, Converter={StaticResource AtLeast}, ConverterParameter=3}"/>
+                                    <Button Style="{StaticResource StarButton}" CommandParameter="4" Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetRatingCommand}"
+                                            c:Ui.IsActive="{Binding Rating, Converter={StaticResource AtLeast}, ConverterParameter=4}"/>
+                                    <Button Style="{StaticResource StarButton}" CommandParameter="5" Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=SetRatingCommand}"
+                                            c:Ui.IsActive="{Binding Rating, Converter={StaticResource AtLeast}, ConverterParameter=5}"/>
+                                </StackPanel>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Stats -->
+                    <UniformGrid x:Name="StatsBlock" Columns="4" Margin="0,46,-14,0">
+                        <UniformGrid.RenderTransform><TranslateTransform/></UniformGrid.RenderTransform>
+                        <Border Style="{StaticResource StatCard}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE823;" Style="{StaticResource Glyph}" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                    <TextBlock Text="TEMPS DE JEU" Style="{StaticResource StatLabel}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding PlayTimeText}" Style="{StaticResource StatValue}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource StatCard}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE81C;" Style="{StaticResource Glyph}" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                    <TextBlock Text="DERNIÈRE SESSION" Style="{StaticResource StatLabel}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding LastPlayedText}" Style="{StaticResource StatValue}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource StatCard}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE768;" Style="{StaticResource Glyph}" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                    <TextBlock Text="LANCEMENTS" Style="{StaticResource StatLabel}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding PlayCountText}" Style="{StaticResource StatValue}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource StatCard}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE787;" Style="{StaticResource Glyph}" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                    <TextBlock Text="AJOUTÉ LE" Style="{StaticResource StatLabel}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding AddedText}" Style="{StaticResource StatValue}"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Screenshots -->
+                    <StackPanel Margin="0,44,0,0" Visibility="{Binding HasScreenshots, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Captures d'écran" Style="{StaticResource SectionTitle}"/>
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,14,0,0" Padding="0,0,0,14">
+                            <ItemsControl ItemsSource="{Binding Screenshots}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Margin="0,0,14,0" Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                                Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenScreenshotCommand}" CommandParameter="{Binding}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid x:Name="Root" Width="320" Height="180" RenderTransformOrigin="0.5,0.5">
+                                                        <Border CornerRadius="12" Background="{StaticResource Surface2}"/>
+                                                        <Border CornerRadius="12" c:ImageLoader.Source="{Binding Thumb}" c:ImageLoader.DecodeWidth="340"/>
+                                                        <Border x:Name="Ring" CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource HairlineLight}"/>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource AccentGradient}"/>
+                                                            <Setter TargetName="Ring" Property="BorderThickness" Value="2"/>
+                                                            <Setter TargetName="Root" Property="RenderTransform">
+                                                                <Setter.Value><ScaleTransform ScaleX="1.03" ScaleY="1.03"/></Setter.Value>
+                                                            </Setter>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+
+                    <!-- About + details -->
+                    <Grid Margin="0,40,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="380"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="À propos" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{Binding Description}" Style="{StaticResource BodyText}" FontSize="15" LineHeight="25" Margin="0,14,0,0" MaxWidth="820"
+                                       HorizontalAlignment="Left" Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}"/>
+                            <StackPanel Visibility="{Binding HasDescription, Converter={StaticResource InvBoolToVis}}" Margin="0,14,0,0">
+                                <TextBlock Text="Aucune description disponible pour ce jeu." Style="{StaticResource BodyText}"/>
+                                <Button Style="{StaticResource LinkButton}" Content="Ajouter une description" c:Ui.Glyph="&#xE76C;" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                        Foreground="{DynamicResource Accent}"
+                                        Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=EditCommand}" CommandParameter="{Binding}"/>
+                            </StackPanel>
+                            <TextBlock Margin="0,18,0,0" FontSize="11.5" Foreground="{StaticResource TextMuted}"
+                                       Visibility="{Binding MetadataSource, Converter={StaticResource NullToVis}}">
+                                <Run Text="Informations fournies par"/>
+                                <Run Text="{Binding MetadataSource, Mode=OneWay}"/>
+                            </TextBlock>
+
+                            <TextBlock Text="Mes notes" Style="{StaticResource SectionTitle}" Margin="0,34,0,0"/>
+                            <TextBox Style="{StaticResource MultiLineInputBox}" Margin="0,14,0,0" MinHeight="110" MaxHeight="260" MaxWidth="820" HorizontalAlignment="Stretch"
+                                     Background="#99141822" c:Ui.Placeholder="Où en êtes-vous ? Astuces, codes, boss à battre… (enregistré automatiquement)"
+                                     Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                        </StackPanel>
+
+                        <Border Grid.Column="2" CornerRadius="16" Background="#CC141822" BorderBrush="{StaticResource Stroke}"
+                                BorderThickness="1" Padding="24,22,24,10" VerticalAlignment="Top">
+                            <StackPanel>
+                                <TextBlock Text="Informations" Style="{StaticResource SectionTitle}" FontSize="16" Margin="0,0,0,18"/>
+                                <TextBlock Text="Développeur" Style="{StaticResource InfoKey}"/>
+                                <TextBlock Text="{Binding Developer, TargetNullValue='—'}" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Text="Éditeur" Style="{StaticResource InfoKey}"/>
+                                <TextBlock Text="{Binding Publisher, TargetNullValue='—'}" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Text="Année de sortie" Style="{StaticResource InfoKey}"/>
+                                <TextBlock Text="{Binding ReleaseText}" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Text="Genres" Style="{StaticResource InfoKey}"/>
+                                <TextBlock Text="{Binding Genres, TargetNullValue='—'}" Style="{StaticResource InfoValue}"/>
+                                <Border Height="1" Background="{StaticResource Stroke}" Margin="0,2,0,16"/>
+                                <TextBlock Text="Plateforme" Style="{StaticResource InfoKey}"/>
+                                <TextBlock Text="{Binding StoreLabel}" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Text="Type de lancement" Style="{StaticResource InfoKey}"/>
+                                <TextBlock Text="{Binding SourceText}" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Text="Cible" Style="{StaticResource InfoKey}"/>
+                                <TextBox Text="{Binding LaunchDisplay, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent"
+                                         Foreground="{StaticResource TextSecondary}" FontFamily="Cascadia Mono, Consolas" FontSize="12" TextWrapping="Wrap"
+                                         CaretBrush="Transparent" Padding="0" Margin="-2,0,0,16" SelectionBrush="{DynamicResource Accent}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Button Style="{StaticResource SecondaryButton}" Content="Ouvrir l'emplacement" c:Ui.Glyph="&#xE838;" Height="34" FontSize="12.5" Padding="12,0"
+                                            IsEnabled="{Binding CanOpenLocation}"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenLocationCommand}" CommandParameter="{Binding}"/>
+                                    <Button Style="{StaticResource GhostButton}" Content="Modifier" Height="34" FontSize="12.5" Padding="12,0" Margin="6,0,0,0"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=EditCommand}" CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

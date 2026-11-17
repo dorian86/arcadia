@@ -1,0 +1,11 @@
+bin/
+obj/
+publish/
+*.user
+.vs/
+.idea/
+TestResults/
+
+# Arcadia
+*.old
+*.part

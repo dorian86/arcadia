@@ -1,0 +1,117 @@
+<UserControl x:Class="Arcadia.Views.EmulatorsDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Arcadia.Controls"
+             xmlns:vm="clr-namespace:Arcadia.ViewModels">
+    <Border Style="{StaticResource DialogCard}" Width="900" Padding="0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Margin="30,26,22,0">
+                <StackPanel Orientation="Horizontal">
+                    <Grid Width="48" Height="48">
+                        <Ellipse Fill="{DynamicResource AccentGlow}" Margin="-14"/>
+                        <Ellipse Fill="{DynamicResource AccentGradient}"/>
+                        <TextBlock Text="&#xE7FC;" Style="{StaticResource Glyph}" FontSize="18" Foreground="White"/>
+                    </Grid>
+                    <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Bibliothèque d'émulation" Style="{StaticResource SectionTitle}" FontSize="22"/>
+                        <TextBlock Text="Indiquez vos émulateurs et le dossier de leurs jeux : Arcadia crée une fiche par jeu, avec sa jaquette."
+                                   FontSize="12.5" Foreground="{StaticResource TextMuted}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <Button Style="{StaticResource IconButton}" c:Ui.Glyph="&#xE8BB;" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Command="{Binding CloseCommand}" ToolTip="Fermer (Échap)"/>
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="0,20,0,0" MinHeight="220">
+                <ScrollViewer MaxHeight="540" VerticalScrollBarVisibility="Auto" c:SmoothScroll.IsEnabled="True">
+                    <ItemsControl ItemsSource="{Binding Rows}" Margin="30,0,30,10" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:EmulatorRow}">
+                                <Border CornerRadius="14" Background="{StaticResource Surface2}" BorderBrush="{StaticResource Stroke}" BorderThickness="1"
+                                        Padding="18,16" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBox Style="{StaticResource InputBox}" Width="220" FontWeight="SemiBold" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBox Style="{StaticResource InputBox}" Width="200" Margin="10,0,0,0" c:Ui.Placeholder="Console"
+                                                         Text="{Binding Console, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding RomCountText}" Foreground="{StaticResource TextSecondary}" FontSize="12.5" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <Button Style="{StaticResource IconButton}" c:Ui.Glyph="&#xE74D;" ToolTip="Retirer cet émulateur"
+                                                        Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Grid.Row="1" Margin="0,12,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Émulateur" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                            <TextBox Grid.Column="1" Style="{StaticResource InputBox}" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                                                     Text="{Binding ExePath, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Parcourir…" Margin="8,0,0,0" FontSize="13"
+                                                    Command="{Binding DataContext.BrowseExeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                        </Grid>
+                                        <Grid Grid.Row="2" Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="150"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Dossier des jeux" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                            <TextBox Grid.Column="1" Style="{StaticResource InputBox}" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                                                     c:Ui.Placeholder="Choisissez le dossier qui contient vos jeux…"
+                                                     Text="{Binding RomFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Parcourir…" Margin="8,0,0,0" FontSize="13"
+                                                    Command="{Binding DataContext.BrowseRomFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                            <TextBlock Grid.Column="3" Text="Extensions" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" Margin="16,0,8,0"/>
+                                            <TextBox Grid.Column="4" Style="{StaticResource InputBox}" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                                                     Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" ToolTip="Séparées par des virgules : xci,nsp"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="480"
+                            Visibility="{Binding Rows.Count, Converter={StaticResource InvCountToVis}}">
+                    <TextBlock Text="Aucun émulateur configuré" Style="{StaticResource SectionTitle}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Ajoutez Ryujinx, Yuzu, Cemu, Dolphin, PCSX2, DuckStation, PPSSPP… Arcadia reconnaît les plus courants et règle leurs options automatiquement."
+                               Style="{StaticResource BodyText}" TextAlignment="Center" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="2" BorderBrush="{StaticResource Stroke}" BorderThickness="0,1,0,0" Padding="30,16" CornerRadius="0,0,18,18"
+                    Background="{StaticResource Bg1}">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Ajouter un émulateur…" c:Ui.Glyph="&#xE710;" Command="{Binding AddEmulatorCommand}"/>
+                        <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextSecondary}" FontSize="12.5" VerticalAlignment="Center" Margin="16,0,0,0"
+                                   TextWrapping="Wrap" MaxWidth="330"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <c:Spinner Width="18" Height="18" Margin="0,0,12,0" Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}"/>
+                        <Button Style="{StaticResource GhostButton}" Content="Fermer" Command="{Binding CloseCommand}"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="Ajouter les jeux" c:Ui.Glyph="&#xE721;" Margin="10,0,0,0" Command="{Binding ScanCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

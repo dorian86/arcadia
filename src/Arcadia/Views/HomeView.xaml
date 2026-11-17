@@ -1,0 +1,186 @@
+<UserControl x:Class="Arcadia.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Arcadia.Controls"
+             xmlns:v="clr-namespace:Arcadia.Views"
+             xmlns:vm="clr-namespace:Arcadia.ViewModels">
+    <ScrollViewer x:Name="Scroller" c:SmoothScroll.IsEnabled="True" VerticalScrollBarVisibility="Auto" Focusable="False">
+        <StackPanel Margin="44,48,44,48">
+
+            <!-- Header -->
+            <Grid Margin="0,0,0,28">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Greeting}" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="{Binding LibraryStats}" Style="{StaticResource PageSubtitle}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8B1;" Content="Au hasard" Margin="0,0,10,0" WindowChrome.IsHitTestVisibleInChrome="True"
+                        Command="{Binding OpenRouletteCommand}" ToolTip="Je ne sais pas à quoi jouer"
+                        Visibility="{Binding HasGames, Converter={StaticResource BoolToVis}}"/>
+                <TextBox x:Name="SearchBox" Style="{StaticResource SearchBox}" Width="320" VerticalAlignment="Center"
+                         c:Ui.Placeholder="Rechercher un jeu…"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Empty library -->
+            <Border Visibility="{Binding HasGames, Converter={StaticResource InvBoolToVis}}" CornerRadius="22" Padding="48,64"
+                    Background="{StaticResource Surface}" BorderBrush="{StaticResource Stroke}" BorderThickness="1">
+                <StackPanel HorizontalAlignment="Center" MaxWidth="620">
+                    <Grid Width="112" Height="112" HorizontalAlignment="Center">
+                        <Ellipse Fill="{DynamicResource AccentGlow}" Margin="-40"/>
+                        <Ellipse Fill="{DynamicResource AccentGradient}" Margin="26"/>
+                        <TextBlock Text="&#xE7FC;" Style="{StaticResource Glyph}" FontSize="26" Foreground="White"/>
+                    </Grid>
+                    <TextBlock Text="Bienvenue dans Arcadia" Style="{StaticResource PageTitle}" FontSize="28" HorizontalAlignment="Center" Margin="0,28,0,0"/>
+                    <TextBlock Text="Rassemblez tous vos jeux PC au même endroit. Arcadia détecte vos jeux Steam, Epic, GOG, Ubisoft et Xbox, et retrouve automatiquement leur nom et leur jaquette."
+                               Style="{StaticResource BodyText}" TextAlignment="Center" Margin="0,12,0,0"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,0,0">
+                        <Button Style="{StaticResource PrimaryButton}" c:Ui.Glyph="&#xE721;" Content="Détecter mes jeux" Height="46" Padding="22,0"
+                                Command="{Binding ScanPcCommand}"/>
+                        <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8E5;" Content="Ajouter des fichiers" Height="46" Padding="20,0" Margin="12,0,0,0"
+                                Command="{Binding AddGamesCommand}"/>
+                        <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8B7;" Content="Importer un dossier" Height="46" Padding="20,0" Margin="12,0,0,0"
+                                Command="{Binding ImportFolderCommand}"/>
+                    </StackPanel>
+                    <TextBlock Text="Astuce : glissez-déposez directement votre dossier « Jeux » du bureau dans cette fenêtre."
+                               FontSize="12.5" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" Margin="0,22,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Featured carousel -->
+            <Grid x:Name="HeroHost" Visibility="{Binding FeaturedGame, Converter={StaticResource NullToVis}}"
+                  MouseEnter="Hero_MouseEnter" MouseLeave="Hero_MouseLeave">
+                <Border Background="{DynamicResource PanelShadowBrush}" Margin="-50,-30,-50,-70" Opacity="0.75" IsHitTestVisible="False"/>
+                <c:ClipBorder CornerRadius="22" Height="440" Background="{StaticResource Surface}">
+                    <Grid>
+                        <!-- two layers cross-fade between featured games -->
+                        <Grid>
+                            <Border x:Name="LayerA" c:ImageLoader.Fade="False"/>
+                            <Border x:Name="LayerB" c:ImageLoader.Fade="False" Opacity="0"/>
+                        </Grid>
+                        <Rectangle>
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#F20A0C11" Offset="0"/>
+                                    <GradientStop Color="#B30A0C11" Offset="0.38"/>
+                                    <GradientStop Color="#300A0C11" Offset="0.75"/>
+                                    <GradientStop Color="#000A0C11" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
+                        <Rectangle>
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#000A0C11" Offset="0.45"/>
+                                    <GradientStop Color="#C00A0C11" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
+
+                        <!-- Content of the current featured game -->
+                        <Grid x:Name="HeroContent" DataContext="{Binding FeaturedGame}">
+                            <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+                            <!-- Cover on the right when there is no hero artwork -->
+                            <Grid Width="232" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,72,0"
+                                  Visibility="{Binding HasHero, Converter={StaticResource InvBoolToVis}}">
+                                <Border Background="{DynamicResource CardShadowBrush}" Margin="-40,-28,-40,-52" Opacity="0.9"/>
+                                <Border CornerRadius="14" Background="{Binding Name, Converter={StaticResource NameToBrush}}">
+                                    <c:AspectRatioBox Ratio="1.5">
+                                        <Border CornerRadius="14" c:ImageLoader.Source="{Binding CoverFullPath}" c:ImageLoader.DecodeWidth="300"/>
+                                    </c:AspectRatioBox>
+                                </Border>
+                            </Grid>
+
+                            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="52,0,52,48" MaxWidth="640">
+                                <Border CornerRadius="7" Background="#33FFFFFF" Padding="10,4" HorizontalAlignment="Left" BorderBrush="#26FFFFFF" BorderThickness="1">
+                                    <TextBlock Text="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=FeaturedLabel}" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                </Border>
+                                <Image MaxHeight="124" MaxWidth="480" HorizontalAlignment="Left" Margin="0,18,0,0" Stretch="Uniform"
+                                       c:ImageLoader.Source="{Binding LogoFullPath}" c:ImageLoader.DecodeWidth="560"
+                                       Visibility="{Binding HasLogo, Converter={StaticResource BoolToVis}}"/>
+                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource DisplayFont}" FontSize="48" FontWeight="Bold" Foreground="White"
+                                           TextWrapping="Wrap" Margin="0,14,0,0" LineHeight="54"
+                                           Visibility="{Binding HasLogo, Converter={StaticResource InvBoolToVis}}"/>
+                                <TextBlock Text="{Binding MetaLine}" Foreground="#CCFFFFFF" FontSize="13.5" Margin="0,14,0,0" TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding LastPlayedAt, Converter={StaticResource InvNullToVis}}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0"
+                                            Visibility="{Binding LastPlayedAt, Converter={StaticResource NullToVis}}">
+                                    <TextBlock Text="&#xE81C;" Style="{StaticResource Glyph}" FontSize="13" Foreground="#CCFFFFFF"/>
+                                    <TextBlock Text="{Binding LastPlayedText}" Foreground="#CCFFFFFF" FontSize="13.5" Margin="8,0,0,0"/>
+                                    <TextBlock Text="·" Foreground="#80FFFFFF" Margin="10,0" FontSize="13.5"/>
+                                    <TextBlock Text="&#xE823;" Style="{StaticResource Glyph}" FontSize="13" Foreground="#CCFFFFFF"/>
+                                    <TextBlock Text="{Binding PlayTimeText}" Foreground="#CCFFFFFF" FontSize="13.5" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,28,0,0">
+                                    <Button Style="{StaticResource PlayButton}" Content="JOUER"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=PlayCommand}" CommandParameter="{Binding}"/>
+                                    <Button Style="{StaticResource GlassButton}" Content="Voir la fiche" c:Ui.Glyph="&#xE946;" Height="56" Padding="22,0" Margin="16,0,0,0"
+                                            c:Ui.CornerRadius="14"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenDetailCommand}" CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Carousel controls -->
+                        <StackPanel x:Name="Dots" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,30">
+                            <ItemsControl ItemsSource="{Binding FeaturedGames}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Cursor="Hand" FocusVisualStyle="{x:Null}" Margin="4,0" Padding="0,8"
+                                                Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=ShowFeaturedCommand}" CommandParameter="{Binding}"
+                                                ToolTip="{Binding Name}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                        <Border x:Name="Dot" Width="8" Height="8" CornerRadius="4" Background="#66FFFFFF"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Value="True">
+                                                            <DataTrigger.Binding>
+                                                                <MultiBinding Converter="{StaticResource SameMulti}">
+                                                                    <Binding/>
+                                                                    <Binding Source="{x:Static vm:MainViewModel.Instance}" Path="FeaturedGame"/>
+                                                                </MultiBinding>
+                                                            </DataTrigger.Binding>
+                                                            <Setter TargetName="Dot" Property="Width" Value="26"/>
+                                                            <Setter TargetName="Dot" Property="Background" Value="White"/>
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Dot" Property="Opacity" Value="0.85"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                        <Button x:Name="PrevButton" Style="{StaticResource GlassButton}" c:Ui.Glyph="&#xE76B;" Width="44" Height="44" Padding="0" c:Ui.CornerRadius="22"
+                                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="16,0,0,0" Opacity="0"
+                                Command="{Binding StepFeaturedCommand}" CommandParameter="-1" ToolTip="Précédent"/>
+                        <Button x:Name="NextButton" Style="{StaticResource GlassButton}" c:Ui.Glyph="&#xE76C;" Width="44" Height="44" Padding="0" c:Ui.CornerRadius="22"
+                                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0" Opacity="0"
+                                Command="{Binding StepFeaturedCommand}" CommandParameter="1" ToolTip="Suivant"/>
+                    </Grid>
+                </c:ClipBorder>
+            </Grid>
+
+            <!-- Shelves -->
+            <v:GameShelf Title="Reprendre la partie" Games="{Binding RecentlyPlayed}" Margin="0,44,0,0"
+                         SeeAllSection="{x:Static vm:Section.Recent}"/>
+            <v:GameShelf Title="Vos favoris" Games="{Binding FavoriteGames}" Margin="0,36,0,0"
+                         SeeAllSection="{x:Static vm:Section.Favorites}"/>
+            <v:GameShelf Title="Ajoutés récemment" Games="{Binding RecentlyAdded}" Margin="0,36,0,0"
+                         SeeAllSection="{x:Static vm:Section.All}"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

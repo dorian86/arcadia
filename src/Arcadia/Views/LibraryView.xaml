@@ -1,0 +1,123 @@
+<UserControl x:Class="Arcadia.Views.LibraryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Arcadia.Controls"
+             xmlns:m="clr-namespace:Arcadia.Models"
+             xmlns:vm="clr-namespace:Arcadia.ViewModels">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Margin="44,48,44,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
+                <TextBlock Text="{Binding PageTitle}" Style="{StaticResource PageTitle}"/>
+                <TextBlock Text="{Binding PageSubtitle}" Style="{StaticResource PageSubtitle}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource IconButton}" c:Ui.Glyph="&#xE8B1;" Margin="0,0,10,0" Background="{StaticResource Surface2}"
+                        WindowChrome.IsHitTestVisibleInChrome="True" Command="{Binding OpenRouletteCommand}" ToolTip="Au hasard : je ne sais pas à quoi jouer"/>
+                <TextBox x:Name="SearchBox" Style="{StaticResource SearchBox}" Width="300"
+                         c:Ui.Placeholder="Rechercher un jeu…"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Button x:Name="SortButton" Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8CB;" Margin="10,0,0,0"
+                        Content="{Binding SortLabel}" Click="SortButton_Click" ToolTip="Trier la bibliothèque"
+                        Visibility="{Binding Section, Converter={StaticResource InvEqualsToVis}, ConverterParameter={x:Static vm:Section.Recent}}">
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Nom (A → Z)" Command="{Binding SetSortCommand}" CommandParameter="{x:Static m:SortMode.NameAsc}"
+                                      IsChecked="{Binding SortMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:SortMode.NameAsc}}"/>
+                            <MenuItem Header="Nom (Z → A)" Command="{Binding SetSortCommand}" CommandParameter="{x:Static m:SortMode.NameDesc}"
+                                      IsChecked="{Binding SortMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:SortMode.NameDesc}}"/>
+                            <Separator/>
+                            <MenuItem Header="Ajoutés récemment" Command="{Binding SetSortCommand}" CommandParameter="{x:Static m:SortMode.AddedDesc}"
+                                      IsChecked="{Binding SortMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:SortMode.AddedDesc}}"/>
+                            <MenuItem Header="Ajoutés en premier" Command="{Binding SetSortCommand}" CommandParameter="{x:Static m:SortMode.AddedAsc}"
+                                      IsChecked="{Binding SortMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:SortMode.AddedAsc}}"/>
+                            <Separator/>
+                            <MenuItem Header="Joués récemment" Command="{Binding SetSortCommand}" CommandParameter="{x:Static m:SortMode.LastPlayed}"
+                                      IsChecked="{Binding SortMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:SortMode.LastPlayed}}"/>
+                            <MenuItem Header="Temps de jeu" Command="{Binding SetSortCommand}" CommandParameter="{x:Static m:SortMode.PlayTime}"
+                                      IsChecked="{Binding SortMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:SortMode.PlayTime}}"/>
+                            <MenuItem Header="Mieux notés" Command="{Binding SetSortCommand}" CommandParameter="{x:Static m:SortMode.Rating}"
+                                      IsChecked="{Binding SortMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static m:SortMode.Rating}}"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+
+                <Border Margin="10,0,0,0" Height="40" CornerRadius="10" Background="{StaticResource Surface2}"
+                        BorderBrush="{StaticResource Stroke}" BorderThickness="1" Padding="12,0" ToolTip="Taille des jaquettes">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE80A;" Style="{StaticResource Glyph}" FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                        <Slider Style="{StaticResource ModernSlider}" Width="96" Margin="10,0" Minimum="140" Maximum="280"
+                                Value="{Binding Settings.CardSize}" VerticalAlignment="Center"/>
+                        <TextBlock Text="&#xE80A;" Style="{StaticResource Glyph}" FontSize="15" Foreground="{StaticResource TextMuted}"/>
+                    </StackPanel>
+                </Border>
+
+                <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8AC;" Content="Renommer" Margin="10,0,0,0"
+                        Visibility="{Binding IsCollectionSection, Converter={StaticResource BoolToVis}}"
+                        Command="{Binding RenameCollectionCommand}" CommandParameter="{Binding CurrentCollection}"/>
+                <Button Style="{StaticResource IconButton}" c:Ui.Glyph="&#xE74D;" Margin="6,0,0,0" ToolTip="Supprimer la collection"
+                        Visibility="{Binding IsCollectionSection, Converter={StaticResource BoolToVis}}"
+                        Command="{Binding DeleteCollectionCommand}" CommandParameter="{Binding CurrentCollection}"/>
+                <Button Style="{StaticResource PrimaryButton}" c:Ui.Glyph="&#xE710;" Content="Ajouter" Margin="10,0,0,0"
+                        Command="{Binding AddGamesCommand}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Grid -->
+        <c:GameGrid x:Name="Grid" Grid.Row="1" Games="{Binding VisibleGames}" CardWidth="{Binding Settings.CardSize}"/>
+
+        <!-- Empty state -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40,0,40,80" MaxWidth="520"
+                    Visibility="{Binding VisibleCount, Converter={StaticResource InvCountToVis}}">
+            <Grid Width="96" Height="96" HorizontalAlignment="Center">
+                <Ellipse Fill="{StaticResource Surface2}"/>
+                <Ellipse Stroke="{StaticResource StrokeStrong}" StrokeThickness="1"/>
+                <TextBlock Text="{Binding EmptyGlyph}" Style="{StaticResource Glyph}" FontSize="30" Foreground="{StaticResource TextSecondary}"/>
+            </Grid>
+            <TextBlock Text="{Binding EmptyTitle}" Style="{StaticResource SectionTitle}" FontSize="22" HorizontalAlignment="Center" Margin="0,22,0,0"/>
+            <TextBlock Text="{Binding EmptyMessage}" Style="{StaticResource BodyText}" TextAlignment="Center" Margin="0,10,0,0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,24,0,0"
+                        Visibility="{Binding HasGames, Converter={StaticResource InvBoolToVis}}">
+                <Button Style="{StaticResource PrimaryButton}" c:Ui.Glyph="&#xE721;" Content="Détecter mes jeux" Command="{Binding ScanPcCommand}"/>
+                <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8E5;" Content="Ajouter des fichiers" Margin="10,0,0,0" Command="{Binding AddGamesCommand}"/>
+                <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8B7;" Content="Importer un dossier" Margin="10,0,0,0"
+                        Command="{Binding ImportFolderCommand}"/>
+            </StackPanel>
+            <Button Style="{StaticResource SecondaryButton}" Content="Effacer la recherche" HorizontalAlignment="Center" Margin="0,22,0,0"
+                    Command="{Binding ClearSearchCommand}"
+                    Visibility="{Binding SearchText, Converter={StaticResource NullToVis}}"/>
+        </StackPanel>
+
+        <!-- Selection bar -->
+        <Grid Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,26"
+              Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+            <Border Background="{DynamicResource PanelShadowBrush}" Margin="-50,-30,-50,-56" Opacity="0.9" IsHitTestVisible="False"/>
+            <Border CornerRadius="16" Background="{StaticResource Surface2}" BorderBrush="{StaticResource StrokeStrong}" BorderThickness="1" Padding="10">
+                <StackPanel Orientation="Horizontal">
+                    <Border CornerRadius="10" Background="{DynamicResource AccentGradient}" Padding="14,0" Height="40">
+                        <TextBlock VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold">
+                            <Run Text="{Binding SelectedCount, Mode=OneWay}"/><Run Text=" sélectionné(s)"/>
+                        </TextBlock>
+                    </Border>
+                    <Button Style="{StaticResource GhostButton}" c:Ui.Glyph="&#xEB51;" Content="Favoris" Margin="8,0,0,0" Command="{Binding BulkFavoriteCommand}"/>
+                    <Button Style="{StaticResource GhostButton}" c:Ui.Glyph="&#xE8EC;" Content="Collections…" Command="{Binding BulkCollectionsCommand}"/>
+                    <Button Style="{StaticResource GhostButton}" c:Ui.Glyph="&#xED1A;" Content="Masquer" Command="{Binding BulkHideCommand}"/>
+                    <Button Style="{StaticResource GhostButton}" c:Ui.Glyph="&#xE74D;" Content="Retirer" Command="{Binding BulkRemoveCommand}"/>
+                    <Border Width="1" Background="{StaticResource StrokeStrong}" Margin="6,8"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Tout" Command="{Binding SelectAllCommand}" ToolTip="Tout sélectionner (Ctrl+A)"/>
+                    <Button Style="{StaticResource IconButton}" c:Ui.Glyph="&#xE711;" FontSize="12" Command="{Binding ClearSelectionCommand}" ToolTip="Annuler la sélection (Échap)"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,145 @@
+<sh:ConsoleShell x:Class="Arcadia.Views.Shells.Ps5Shell"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:c="clr-namespace:Arcadia.Controls"
+                 xmlns:sh="clr-namespace:Arcadia.Views.Shells"
+                 FontFamily="Segoe UI" TextOptions.TextFormattingMode="Ideal">
+    <sh:ConsoleShell.Resources>
+        <Style x:Key="TopIcon" TargetType="Button" BasedOn="{StaticResource BareButton}">
+            <Setter Property="Margin" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Width="52" Height="52" Background="Transparent">
+                            <Ellipse x:Name="Bg" Fill="#33FFFFFF" Opacity="0"/>
+                            <TextBlock Text="{TemplateBinding Content}" Style="{StaticResource Glyph}" FontSize="22" Foreground="White"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </sh:ConsoleShell.Resources>
+
+    <Grid ClipToBounds="True" Background="#07080B">
+        <!-- full-screen artwork of the selected game (cross-faded) and its trailer -->
+        <Grid>
+            <Border x:Name="BgA" c:ImageLoader.Fade="False" c:ImageLoader.AlignY="Top" RenderOptions.BitmapScalingMode="Linear"/>
+            <Border x:Name="BgB" c:ImageLoader.Fade="False" c:ImageLoader.AlignY="Top" RenderOptions.BitmapScalingMode="Linear" Opacity="0"/>
+        </Grid>
+        <c:TrailerPlayer x:Name="Trailer" TargetOpacity="0.85"/>
+        <Rectangle>
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#E607080B" Offset="0"/>
+                    <GradientStop Color="#8007080B" Offset="0.45"/>
+                    <GradientStop Color="#1007080B" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+        <Rectangle>
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#B307080B" Offset="0"/>
+                    <GradientStop Color="#0007080B" Offset="0.32"/>
+                    <GradientStop Color="#3307080B" Offset="0.6"/>
+                    <GradientStop Color="#F207080B" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <c:DesignScaler>
+            <Grid>
+                <!-- top bar: tabs, icons, user, clock -->
+                <ItemsControl x:Name="Tabs" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="96,34,0,0" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,28,180,0">
+                    <Button Style="{StaticResource TopIcon}" Content="&#xE8B1;" ToolTip="Au hasard" Command="{Binding RandomCommand}"/>
+                    <Button x:Name="AddTop" Style="{StaticResource TopIcon}" Content="&#xE710;" ToolTip="Ajouter des jeux" Click="Add_Click"/>
+                    <Button Style="{StaticResource TopIcon}" Content="&#xE790;" ToolTip="Thèmes" Command="{Binding Main.OpenThemesCommand}"/>
+                    <Button Style="{StaticResource TopIcon}" Content="&#xE8A9;" ToolTip="Interface classique" Command="{Binding OpenClassicCommand}"/>
+                    <Button Style="{StaticResource TopIcon}" Content="&#xE713;" ToolTip="Réglages" Command="{Binding OpenSettingsCommand}"/>
+                    <Grid Width="44" Height="44" Margin="14,0,0,0">
+                        <Ellipse>
+                            <Ellipse.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#6C8CFF" Offset="0"/>
+                                    <GradientStop Color="#3B4FCF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <TextBlock Text="{Binding UserInitial}" FontSize="20" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <TextBlock Text="{Binding TimeText}" FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="22,0,0,0"/>
+                </StackPanel>
+
+                <!-- game row -->
+                <Canvas Margin="0,106,0,0" VerticalAlignment="Top" Height="170">
+                    <StackPanel x:Name="Row" Orientation="Horizontal" Canvas.Left="96">
+                        <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
+                    </StackPanel>
+                </Canvas>
+
+                <!-- the selected game -->
+                <StackPanel x:Name="Hero" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="96,330,0,0" MaxWidth="900">
+                    <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
+                    <Image x:Name="HeroLogo" MaxWidth="600" MaxHeight="230" HorizontalAlignment="Left" Stretch="Uniform"/>
+                    <TextBlock x:Name="HeroTitle" FontSize="64" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" MaxHeight="170" TextTrimming="WordEllipsis"/>
+                    <TextBlock x:Name="HeroMeta" FontSize="20" Foreground="#CCFFFFFF" Margin="2,18,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,34,0,0">
+                        <Button x:Name="PlayButton" Style="{StaticResource BareButton}" Command="{Binding PlayCommand}">
+                            <Grid>
+                                <Border x:Name="PlayRing" CornerRadius="38" Margin="-6" BorderThickness="3" BorderBrush="White" Opacity="0"/>
+                                <Border CornerRadius="33" Height="66" Width="240" Background="White">
+                                    <TextBlock Text="Jouer" FontSize="26" FontWeight="SemiBold" Foreground="#101216" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource BareButton}" Margin="18,0,0,0" Command="{Binding OpenDetailsCommand}" ToolTip="Fiche du jeu">
+                            <Grid>
+                                <Border x:Name="MoreRing" CornerRadius="38" Margin="-6" BorderThickness="3" BorderBrush="White" Opacity="0"/>
+                                <Border CornerRadius="33" Width="66" Height="66" Background="#40FFFFFF">
+                                    <TextBlock Text="&#xE712;" Style="{StaticResource Glyph}" FontSize="24" Foreground="White"/>
+                                </Border>
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource BareButton}" Margin="14,0,0,0" Command="{Binding ToggleFavoriteCommand}" ToolTip="Favori (F)">
+                            <Border CornerRadius="33" Width="66" Height="66" Background="#40FFFFFF">
+                                <TextBlock x:Name="FavGlyph" Text="&#xEB51;" Style="{StaticResource Glyph}" FontSize="24" Foreground="White"/>
+                            </Border>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- activity cards -->
+                <StackPanel x:Name="Cards" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="96,0,0,44">
+                    <Border Width="290" Height="112" CornerRadius="16" Background="#59000000" BorderBrush="#26FFFFFF" BorderThickness="1" Padding="24,18" Margin="0,0,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Temps de jeu" FontSize="16" Foreground="#B3FFFFFF"/>
+                            <TextBlock x:Name="CardTime" FontSize="28" FontWeight="SemiBold" Foreground="White" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Width="290" Height="112" CornerRadius="16" Background="#59000000" BorderBrush="#26FFFFFF" BorderThickness="1" Padding="24,18" Margin="0,0,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Dernière session" FontSize="16" Foreground="#B3FFFFFF"/>
+                            <TextBlock x:Name="CardLast" FontSize="28" FontWeight="SemiBold" Foreground="White" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Width="290" Height="112" CornerRadius="16" Background="#59000000" BorderBrush="#26FFFFFF" BorderThickness="1" Padding="24,18">
+                        <StackPanel>
+                            <TextBlock Text="Progression" FontSize="16" Foreground="#B3FFFFFF"/>
+                            <TextBlock x:Name="CardStatus" FontSize="28" FontWeight="SemiBold" Foreground="White" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </c:DesignScaler>
+    </Grid>
+</sh:ConsoleShell>
