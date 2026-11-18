@@ -39,8 +39,14 @@ public class ThemeTests
             // the signature follows the source files: a new cover rebuilds the tiles
             var before = TileArt.Signature(sources);
             Assert.Equal(before, TileArt.Signature(sources));
+            // the cache file name only depends on the game and its images: found again at every launch
+            var file = TileArt.FileFor("abc", before, "sq");
+            Assert.Equal(file, TileArt.FileFor("abc", before, "sq"));
+            Assert.NotEqual(file, TileArt.FileFor("abc", before, "wide"));
+            Assert.StartsWith(TileArt.Folder, file);
             File.WriteAllBytes(cover, square);
             Assert.NotEqual(before, TileArt.Signature(sources));
+            Assert.NotEqual(file, TileArt.FileFor("abc", TileArt.Signature(sources), "sq"));
 
             // nothing to build from: no tile (the themes fall back to the cover)
             Assert.Null(Sta.Run(() => TileArt.Square(new TileSources(null, null, null))).Result);

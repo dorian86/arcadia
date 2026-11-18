@@ -40,6 +40,20 @@ public static class TileArt
         catch { return "-"; }
     }
 
+    /// <summary>Folder of the tile cache, relative to the data folder.</summary>
+    public static readonly string Folder = Path.Combine("images", "tiles");
+
+    /// <summary>
+    /// Cache file of a tile: its name is derived from the source images, so a tile built once is found again at
+    /// every launch (even when library.json lost track of it, e.g. after running an older Arcadia), and an image
+    /// cache can never show an outdated tile (new sources = new name).
+    /// </summary>
+    public static string FileFor(string gameId, string signature, string kind)
+    {
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(System.Text.Encoding.UTF8.GetBytes(signature)))[..12].ToLowerInvariant();
+        return Path.Combine(Folder, $"{gameId}_{hash}_{kind}.jpg");
+    }
+
     public static byte[]? Square(TileSources s) => Render(s, SquareSize, SquareSize, wide: false);
 
     public static byte[]? Wide(TileSources s) => Render(s, WideWidth, WideHeight, wide: true);

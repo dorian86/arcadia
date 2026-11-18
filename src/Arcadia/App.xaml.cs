@@ -121,6 +121,7 @@ public partial class App : Application
 
         // started by an update: let the previous version quit (it holds the single-instance lock), then clean up
         if (options.UpdatedFrom is int previous) UpdateService.FinishUpdate(previous);
+        else UpdateService.DeleteLeftover();
 
         if (!options.IsDeveloperRun && !AcquireSingleInstance())
         {

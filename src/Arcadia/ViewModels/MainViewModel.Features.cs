@@ -32,72 +32,153 @@ public partial class MainViewModel
     private readonly HashSet<Game> _tileQueue = new();
     private bool _tileWorkerRunning;
 
-    /// <summary>Every game gets square and wide tiles shaped for the themes (rebuilt only when its images changed).</summary>
+    /// <summary>What the tile worker knows about one game (read on the UI thread).</summary>
+    private sealed record TileJob(Game Game, string Id, TileSources Sources, string? Known, string? KnownSquare, string? KnownWide)
+    {
+        public string Signature { get; set; } = "";
+        public string? Square { get; set; }
+        public string? Wide { get; set; }
+    }
+
+    /// <summary>
+    /// Every game gets square and wide tiles shaped for the themes. A tile is built once and kept on disk
+    /// (<see cref="TileArt.FileFor"/>): later launches only check that the source images did not change.
+    /// </summary>
     private async Task BuildAllTilesAsync()
     {
-        await Task.Delay(TimeSpan.FromSeconds(4));
-        foreach (var g in Library.Games) QueueTiles(g);
+        await Task.Delay(800);
+        foreach (var g in Library.Games) _tileQueue.Add(g);
+        var ok = true;
+        if (!_tileWorkerRunning) ok = await RunTileWorkerAsync(wait: false);
+        else while (_tileWorkerRunning) await Task.Delay(300); // the running worker takes the queue too
+        // only once every game was matched with its tiles, otherwise reusable tiles would be thrown away
+        if (ok && _tileQueue.Count == 0) CleanTileCache();
     }
 
     /// <summary>Called when a cover, illustration or logo changes, and for new games.</summary>
     private void QueueTiles(Game game)
     {
         _tileQueue.Add(game);
-        if (!_tileWorkerRunning) _ = RunTileWorkerAsync();
+        if (!_tileWorkerRunning) _ = RunTileWorkerAsync(wait: true);
     }
 
-    private async Task RunTileWorkerAsync()
+    private async Task<bool> RunTileWorkerAsync(bool wait)
     {
         _tileWorkerRunning = true;
+        var ok = true;
         try
         {
-            await Task.Delay(1500); // a metadata match writes cover, illustration and logo one after the other
+            if (wait) await Task.Delay(1500); // a metadata match writes cover, illustration and logo one after the other
             while (_tileQueue.Count > 0)
             {
-                var batch = _tileQueue.Take(6).ToList();
-                foreach (var g in batch) _tileQueue.Remove(g);
-                var jobs = batch.Where(g => Library.Games.Contains(g))
-                    .Select(g => (Game: g, Sources: new TileSources(g.CoverFullPath, g.HeroFullPath, g.LogoFullPath), Known: g.TileSignature))
+                var jobs = _tileQueue.Where(g => Library.Games.Contains(g))
+                    .Select(g => new TileJob(g, g.Id, new TileSources(g.CoverFullPath, g.HeroFullPath, g.LogoFullPath), g.TileSignature, g.TileSquare, g.TileWide))
                     .ToList();
-                // rendered on a worker thread: the interface never stutters, even for a whole library
-                var results = await Sta.Run(() => jobs.Select(j =>
+                _tileQueue.Clear();
+
+                // 1. cheap check, off the UI thread: unchanged images, or tiles already built by an earlier launch
+                var toBuild = await Task.Run(() =>
                 {
-                    var signature = TileArt.Signature(j.Sources);
-                    if (signature == j.Known) return (j.Game, Signature: (string?)null, Square: (byte[]?)null, Wide: (byte[]?)null);
-                    try { return (j.Game, Signature: signature, Square: TileArt.Square(j.Sources), Wide: TileArt.Wide(j.Sources)); }
-                    catch (Exception ex)
+                    var missing = new List<TileJob>();
+                    foreach (var j in jobs)
                     {
-                        Log.Warn($"Tile artwork failed for '{j.Game.Name}': {ex.Message}");
-                        return (j.Game, Signature: signature, Square: (byte[]?)null, Wide: (byte[]?)null);
+                        j.Signature = TileArt.Signature(j.Sources);
+                        if (j.Signature == j.Known && Exists(j.KnownSquare) && Exists(j.KnownWide)) { j.Signature = j.Known; continue; }
+                        var sq = TileArt.FileFor(j.Id, j.Signature, "sq");
+                        var wide = TileArt.FileFor(j.Id, j.Signature, "wide");
+                        if (File.Exists(AppPaths.Resolve(sq)) && File.Exists(AppPaths.Resolve(wide))) { j.Square = sq; j.Wide = wide; }
+                        else missing.Add(j);
                     }
-                }).ToList());
-                var built = results.Count(r => r.Signature != null);
-                if (built > 0) Log.Info($"Tiles built for {built} game(s)");
-                foreach (var r in results)
+                    return missing;
+                });
+                foreach (var j in jobs.Where(j => j.Square != null && !toBuild.Contains(j))) ApplyTiles(j);
+
+                // 2. only new or changed artwork is rendered, on several worker threads (the interface never stutters)
+                if (toBuild.Count == 0) continue;
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                var threads = Math.Clamp(Environment.ProcessorCount / 2, 1, 4);
+                var pending = new Queue<TileJob>(toBuild);
+                var running = new List<Task<List<TileJob>>>();
+                while (pending.Count > 0 || running.Count > 0)
                 {
-                    if (r.Signature == null || !Library.Games.Contains(r.Game)) continue;
-                    r.Game.TileSquare = await SaveTileAsync(r.Game, r.Game.TileSquare, r.Square, "sq");
-                    r.Game.TileWide = await SaveTileAsync(r.Game, r.Game.TileWide, r.Wide, "wide");
-                    r.Game.TileSignature = r.Signature;
+                    while (running.Count < threads && pending.Count > 0)
+                    {
+                        var chunk = new List<TileJob>();
+                        while (chunk.Count < 3 && pending.Count > 0) chunk.Add(pending.Dequeue());
+                        running.Add(Sta.Run(() => { foreach (var j in chunk) RenderTiles(j); return chunk; }));
+                    }
+                    var done = await Task.WhenAny(running);
+                    running.Remove(done);
+                    foreach (var j in await done) ApplyTiles(j); // tiles appear as soon as they are ready
                 }
-                await Task.Delay(50);
+                Log.Info($"Tiles built for {toBuild.Count} game(s) in {watch.Elapsed.TotalSeconds:0.0}s");
             }
         }
-        catch (Exception ex) { Log.Warn($"Tile artwork worker failed: {ex.Message}"); }
+        catch (Exception ex) { Log.Warn($"Tile artwork worker failed: {ex.Message}"); ok = false; }
         finally { _tileWorkerRunning = false; }
+        return ok;
     }
 
-    private static async Task<string?> SaveTileAsync(Game game, string? old, byte[]? bytes, string kind)
+    /// <summary>A tile path that is unset (no artwork) or whose file is still on disk.</summary>
+    private static bool Exists(string? rel) => rel == null || File.Exists(AppPaths.Resolve(rel));
+
+    /// <summary>Renders and writes both tiles of a game (STA worker thread).</summary>
+    private static void RenderTiles(TileJob j)
     {
-        string? rel = null;
-        if (bytes != null)
+        try
         {
-            // a new name each time: image caches never show an outdated tile
-            rel = Path.Combine("images", $"{game.Id}_tile_{kind}_{DateTime.UtcNow.Ticks:x}.jpg");
-            await File.WriteAllBytesAsync(AppPaths.Resolve(rel)!, bytes);
+            Directory.CreateDirectory(AppPaths.Resolve(TileArt.Folder)!);
+            j.Square = WriteTile(TileArt.Square(j.Sources), TileArt.FileFor(j.Id, j.Signature, "sq"));
+            j.Wide = WriteTile(TileArt.Wide(j.Sources), TileArt.FileFor(j.Id, j.Signature, "wide"));
         }
-        if (old != null && old != rel) AppPaths.TryDeleteManaged(old);
+        catch (Exception ex) { Log.Warn($"Tile artwork failed for '{j.Game.Name}': {ex.Message}"); }
+    }
+
+    private static string? WriteTile(byte[]? bytes, string rel)
+    {
+        if (bytes == null) return null;
+        var full = AppPaths.Resolve(rel)!;
+        var part = full + ".part"; // never leave a half-written tile behind (it would be reused as is)
+        File.WriteAllBytes(part, bytes);
+        File.Move(part, full, overwrite: true);
         return rel;
+    }
+
+    private void ApplyTiles(TileJob j)
+    {
+        if (!Library.Games.Contains(j.Game)) return;
+        var game = j.Game;
+        if (game.TileSquare != null && game.TileSquare != j.Square) AppPaths.TryDeleteManaged(game.TileSquare);
+        if (game.TileWide != null && game.TileWide != j.Wide) AppPaths.TryDeleteManaged(game.TileWide);
+        game.TileSquare = j.Square;
+        game.TileWide = j.Wide;
+        game.TileSignature = j.Signature;
+    }
+
+    /// <summary>Deletes tiles no game uses any more (old artwork, removed games, tiles of older versions).</summary>
+    private void CleanTileCache()
+    {
+        var used = Library.Games.SelectMany(g => new[] { g.TileSquare, g.TileWide })
+            .Where(p => p != null).Select(p => Path.GetFileName(p!)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var started = DateTime.UtcNow.AddSeconds(-5);
+        _ = Task.Run(() =>
+        {
+            var removed = 0;
+            try
+            {
+                var dir = AppPaths.Resolve(TileArt.Folder)!;
+                var files = Directory.Exists(dir) ? Directory.EnumerateFiles(dir).ToList() : new List<string>();
+                // tiles of Arcadia 1.0.0 were stored next to the covers ("<id>_tile_sq_<ticks>.jpg")
+                files.AddRange(Directory.EnumerateFiles(AppPaths.ImagesDir, "*_tile_*.jpg"));
+                // files written meanwhile belong to a tile being built right now
+                foreach (var f in files.Where(f => !used.Contains(Path.GetFileName(f)) && File.GetLastWriteTimeUtc(f) < started))
+                {
+                    try { File.Delete(f); removed++; } catch { /* in use: next launch */ }
+                }
+            }
+            catch (Exception ex) { Log.Warn($"Tile cache cleanup failed: {ex.Message}"); }
+            if (removed > 0) Log.Info($"Tile cache: {removed} unused file(s) deleted");
+        });
     }
 
     public void SaveSettings() => _settingsService.SaveNow();

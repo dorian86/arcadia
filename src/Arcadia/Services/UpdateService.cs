@@ -181,6 +181,14 @@ public static class UpdateService
         }
     }
 
+    /// <summary>A previous version renamed while it was running ("Arcadia.exe.old"): removed once it has quit.</summary>
+    public static void DeleteLeftover()
+    {
+        if (Environment.ProcessPath is not { } current || !IsPublishedBuild) return;
+        try { if (File.Exists(current + ".old")) File.Delete(current + ".old"); }
+        catch { /* still running: next launch */ }
+    }
+
     /// <summary>Started by the update: wait for the old process to quit, then clean up behind it.</summary>
     public static void FinishUpdate(int previousProcessId)
     {
