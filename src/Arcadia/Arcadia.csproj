@@ -12,7 +12,7 @@
     <RootNamespace>Arcadia</RootNamespace>
     <ApplicationIcon>Assets\Arcadia.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <!-- Public GitHub repository that holds the published versions (Releases with Arcadia.exe attached).
          The code itself can stay in a private repository. Format: pseudo/arcadia-releases -->
     <UpdateRepository>dorian86/arcadia-releases</UpdateRepository>
