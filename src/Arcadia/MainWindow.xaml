@@ -26,6 +26,20 @@
 
         <!-- ============================ Ambient background ============================ -->
         <Grid Grid.ColumnSpan="2" IsHitTestVisible="False" ClipToBounds="True">
+            <!-- custom wallpaper (Settings > Appearance), darkened so that text stays readable -->
+            <Grid Visibility="{Binding HasWallpaper, Converter={StaticResource BoolToVis}}">
+                <Border c:ImageLoader.Source="{Binding WallpaperPath}" c:ImageLoader.DecodeWidth="2560"/>
+                <Rectangle Fill="{StaticResource Bg0}" Opacity="{Binding WallpaperDimOpacity}"/>
+                <!-- a little darker behind the page titles -->
+                <Rectangle Height="260" VerticalAlignment="Top">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#990A0C11" Offset="0"/>
+                            <GradientStop Color="#000A0C11" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+            </Grid>
             <Ellipse x:Name="AmbientTop" Width="1400" Height="1000" HorizontalAlignment="Right" VerticalAlignment="Top"
                      Margin="0,-560,-420,0" Opacity="0.30"/>
             <Ellipse x:Name="AmbientBottom" Width="1100" Height="900" HorizontalAlignment="Left" VerticalAlignment="Bottom"

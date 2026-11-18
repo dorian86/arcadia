@@ -72,6 +72,7 @@ public partial class MainViewModel : ObservableObject
         };
         Settings.PropertyChanged += (_, e) =>
         {
+            OnWallpaperSettingChanged(e.PropertyName);
             switch (e.PropertyName)
             {
                 case nameof(AppSettings.SortMode):

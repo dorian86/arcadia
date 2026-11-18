@@ -58,6 +58,57 @@
                                 Command="{Binding OpenThemesCommand}"/>
                     </Grid>
                     <Border Style="{StaticResource Divider}"/>
+
+                    <!-- Wallpaper of the default interface -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- preview -->
+                        <Border Width="128" Height="72" CornerRadius="10" Margin="0,0,18,0" ClipToBounds="True"
+                                Background="{StaticResource Surface2}" BorderBrush="{StaticResource Stroke}" BorderThickness="1">
+                            <Grid>
+                                <TextBlock Text="&#xEB9F;" Style="{StaticResource Glyph}" FontSize="22" Foreground="{StaticResource TextMuted}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="9" c:ImageLoader.Source="{Binding WallpaperPath}" c:ImageLoader.DecodeWidth="260"
+                                        Visibility="{Binding HasWallpaper, Converter={StaticResource BoolToVis}}"/>
+                            </Grid>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Fond d'écran" Style="{StaticResource RowTitle}"/>
+                            <TextBlock Text="Une image de votre choix derrière l'interface Arcadia (accueil, bibliothèque, statistiques…). Elle est copiée dans Arcadia : vous pouvez déplacer ou supprimer l'originale."
+                                       Style="{StaticResource RowHint}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
+                            <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xEB9F;" Content="Choisir une image…"
+                                    Command="{Binding ChooseWallpaperCommand}" IsEnabled="{Binding IsWallpaperBusy, Converter={StaticResource InvertBool}}"/>
+                            <Button Style="{StaticResource GhostButton}" Content="Retirer" Margin="8,0,0,0"
+                                    Command="{Binding RemoveWallpaperCommand}" Visibility="{Binding HasWallpaper, Converter={StaticResource BoolToVis}}"/>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Margin="146,14,0,0" Visibility="{Binding HasWallpaper, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Assombrir" Style="{StaticResource RowHint}" VerticalAlignment="Center" Width="90" Margin="0"/>
+                            <Slider Grid.Column="1" Style="{StaticResource ModernSlider}" Minimum="0" Maximum="90" Width="300" Margin="0,0,14,0"
+                                    Value="{Binding Settings.WallpaperDim}" ToolTip="Plus l'image est assombrie, plus les textes sont lisibles"/>
+                            <TextBlock Grid.Column="2" Style="{StaticResource RowHint}" VerticalAlignment="Center" Margin="0"
+                                       Text="{Binding Settings.WallpaperDim, StringFormat={}{0:0} %}"/>
+                        </Grid>
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.WallpaperBlur}" Margin="0,12,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Flouter l'image" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Un flou doux met les jaquettes en valeur." Style="{StaticResource RowHint}"/>
+                            </StackPanel>
+                        </CheckBox>
+                    </StackPanel>
+                    <Border Style="{StaticResource Divider}"/>
                     <TextBlock Text="Couleur d'accent" Style="{StaticResource RowTitle}" Margin="0,4,0,12"/>
                     <ItemsControl ItemsSource="{Binding AccentPresets}" Focusable="False">
                         <ItemsControl.ItemsPanel>

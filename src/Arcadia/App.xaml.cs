@@ -35,6 +35,7 @@ public partial class App : Application
         public string? Section;
         public int? Detail;
         public string? DetailName;
+        public string? Wallpaper;
         public string? Dialog;
         public bool WaitMetadata;
         public string? Play;
@@ -69,6 +70,7 @@ public partial class App : Application
                     case "--section": o.Section = Next(); break;
                     case "--detail": o.Detail = int.TryParse(Next(), out var d) ? d : 0; break;
                     case "--detail-name": o.DetailName = Next(); break;
+                    case "--wallpaper": o.Wallpaper = Next(); break;
                     case "--dialog": o.Dialog = Next(); break;
                     case "--wait-metadata": o.WaitMetadata = true; break;
                     case "--play": o.Play = Next(); break;
@@ -166,10 +168,15 @@ public partial class App : Application
         MainWindow = window;
         _vm.RestartInstalledRequested += () => RestartInstalled(window);
         if (!options.IsDeveloperRun || options.ForceTray) SetupTray(window, settings.Settings);
-        if (!(options.Tray && settings.Settings.ShowTrayIcon)) window.Show();
+        if (!(options.Tray && settings.Settings.ShowTrayIcon))
+        {
+            window.Show();
+            if (!options.IsDeveloperRun && options.UpdatedFrom == null) _vm.Sound.PlayStartup();
+        }
         if (options.Tv) _vm.EnterTvModeCommand.Execute(null);
 
         if (options.Imports.Count > 0) await _vm.ImportPathsAsync(options.Imports);
+        if (options.Wallpaper != null) await _vm.SetWallpaperAsync(options.Wallpaper); // same path as "Choisir une image…"
         if (options.Snapshot != null) await RunSnapshotAsync(window, _vm, options);
     }
 

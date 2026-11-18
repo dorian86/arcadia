@@ -31,6 +31,7 @@ Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, d
 - 🎮 **Mode TV** plein écran pour jouer depuis le canapé avec une manette Xbox.
 - 🕹️ **Émulateurs** : vos ROM deviennent des jeux comme les autres, avec leur jaquette.
 - 🎨 **Thèmes d'interface** dans l'esprit des menus de consoles : Wii, Wii U, Switch, PS3, PS4 et PS5.
+- 🖼️ **Fond d'écran personnalisé** pour l'interface Arcadia : l'image de votre choix, assombrie à votre goût et floutée si vous le souhaitez.
 - 🔄 **Mises à jour automatiques** en un clic.
 
 <br>

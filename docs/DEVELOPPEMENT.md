@@ -84,8 +84,9 @@ Clavier, souris et manette fonctionnent dans tous les thèmes (flèches, Entrée
 **Apparence et sons**
 - 6 couleurs d'accent (Nébuleuse, Océan, Émeraude, Crépuscule, Sakura, Or).
 - **Couleurs dynamiques** : l'arrière-plan s'illumine avec la couleur dominante de la jaquette affichée.
+- **Fond d'écran** (*Réglages → Apparence*, interface Arcadia uniquement) : l'image est copiée dans `images\wallpaper_*`, assombrie (curseur 0-90 %, 70 % par défaut) et éventuellement floutée ; le flou est calculé une seule fois en image (`wallpaper_blur_*.jpg`), jamais en effet temps réel.
 - Animations : apparition des pages, entrée échelonnée de la fiche, survol des cartes (zoom, reflet, anneau lumineux), fondus enchaînés.
-- **Effets sonores** discrets (navigation, ouverture, lancement, favoris, mode TV), générés par l'application, volume réglable ou désactivables.
+- **Effets sonores** discrets (démarrage, navigation, ouverture, lancement, favoris, mode TV), générés par l'application (`sounds\v2`, à renommer en v3… dès que la synthèse change), volume réglable ou désactivables. Au lancement, chaque lecteur est « amorcé » par une lecture muette et un flux inaudible réveille la sortie audio pendant 15 s (casques Bluetooth, écrans HDMI qui avalent le début du premier son).
 
 **Système** : icône dans la zone de notification (lancer un jeu récent, mode TV, quitter), option « garder ouvert à la fermeture », **lancement avec Windows** (démarre dans la zone de notification).
 
@@ -119,13 +120,13 @@ Prérequis : **SDK .NET 10**, Windows 10/11.
 
 ```powershell
 dotnet build src\Arcadia\Arcadia.csproj                     # compiler
-dotnet test tests\Arcadia.Tests\Arcadia.Tests.csproj         # 80 tests
+dotnet test tests\Arcadia.Tests\Arcadia.Tests.csproj         # 84 tests
 powershell -ExecutionPolicy Bypass -File tools\publish.ps1   # publish\Arcadia.exe autonome
 ```
 
 > Sur ce PC, le SDK .NET 10 est installé dans `%LOCALAPPDATA%\Microsoft\dotnet` ; `tools\build.ps1` et `tools\publish.ps1` l'utilisent automatiquement.
 
-Options développeur : `--data <dossier>` (bibliothèque séparée / portable), `--import <chemin>`, `--tray` (démarrer dans la zone de notification), `--tv`, `--snapshot <png>` (+ `--section`, `--detail n` ou `--detail-name <nom>`, `--dialog edit|cover|confirm|scan|collections|emulators|roulette|themes`, `--theme <clé>` (wii, wiiu, switch, switch-light, ps3, ps4, ps5), `--keys Right,Enter…` (touches envoyées au thème avant la capture), `--mouse "move 300 400; click; wheel 2; back"` (pilote la vraie souris avant la capture), `--wait-metadata`, `--size LxH`, `--perf`, `--play <nom>`, `--hover` : affiche toutes les jaquettes dans leur état « survolé », `--scroll <px>` : fait défiler la liste avant la capture). `tools\snapshot.ps1` automatise les captures.
+Options développeur : `--data <dossier>` (bibliothèque séparée / portable), `--import <chemin>`, `--tray` (démarrer dans la zone de notification), `--tv`, `--snapshot <png>` (+ `--section`, `--detail n` ou `--detail-name <nom>`, `--wallpaper <image>` (applique un fond d'écran comme le bouton des réglages), `--dialog edit|cover|confirm|scan|collections|emulators|roulette|themes`, `--theme <clé>` (wii, wiiu, switch, switch-light, ps3, ps4, ps5), `--keys Right,Enter…` (touches envoyées au thème avant la capture), `--mouse "move 300 400; click; wheel 2; back"` (pilote la vraie souris avant la capture), `--wait-metadata`, `--size LxH`, `--perf`, `--play <nom>`, `--hover` : affiche toutes les jaquettes dans leur état « survolé », `--scroll <px>` : fait défiler la liste avant la capture). `tools\snapshot.ps1` automatise les captures.
 
 ## Partager et mettre à jour (GitHub)
 
@@ -161,7 +162,7 @@ src/Arcadia
 │   └── Shells/    thèmes de console (Wii, Wii U, Switch, PS3, PS4, PS5) + fenêtre Thèmes
 ├── Controls/      GameGrid (virtualisée), ImageLoader (asynchrone, cache), SmoothScroll, GameMenu…
 └── Themes/        palette, styles, modèles
-tests/Arcadia.Tests   80 tests
+tests/Arcadia.Tests   84 tests
 ```
 
 ## Limites connues

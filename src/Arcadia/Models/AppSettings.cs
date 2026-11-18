@@ -30,6 +30,15 @@ public partial class AppSettings : ObservableObject
     /// <summary>Tint the background with the colours of the selected game's cover.</summary>
     [ObservableProperty] private bool _dynamicColors = true;
 
+    // ---- Wallpaper of the default interface ----
+    /// <summary>Copy of the chosen image in the data folder (relative path), null = no wallpaper.</summary>
+    [ObservableProperty] private string? _wallpaper;
+    /// <summary>Blurred copy, built once when the blur is turned on.</summary>
+    [ObservableProperty] private string? _wallpaperBlurred;
+    [ObservableProperty] private bool _wallpaperBlur;
+    /// <summary>Darkening laid over the image so that text stays readable (0-90 %).</summary>
+    [ObservableProperty] private double _wallpaperDim = 70;
+
     // ---- Sound ----
     [ObservableProperty] private bool _soundEnabled = true;
     [ObservableProperty] private double _soundVolume = 0.5;
