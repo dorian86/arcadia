@@ -14,8 +14,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Version>1.0.1</Version>
     <!-- Public GitHub repository that holds the published versions (Releases with Arcadia.exe attached).
-         The code itself can stay in a private repository. Format: pseudo/arcadia-releases -->
-    <UpdateRepository>dorian86/arcadia-releases</UpdateRepository>
+         Here the same public repository as the code. Format: pseudo/repository.
+         Versions 1.0.0 and 1.0.1 still check "dorian86/arcadia-releases": GitHub redirects that old name here. -->
+    <UpdateRepository>dorian86/arcadia</UpdateRepository>
     <Product>Arcadia</Product>
     <Company>Arcadia</Company>
     <Description>Arcadia - lanceur de jeux PC</Description>

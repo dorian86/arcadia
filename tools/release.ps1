@@ -3,7 +3,7 @@
 #   powershell -ExecutionPolicy Bypass -File tools\release.ps1 -Version 1.1.0 -Notes "- Nouveaux thèmes`n- Corrections"
 #
 # Étapes : numéro de version dans Arcadia.csproj -> tests -> Arcadia.exe -> commit + tag Git (+ envoi sur
-# votre dépôt privé s'il est configuré) -> Release sur le dépôt PUBLIC des versions (UpdateRepository) avec
+# GitHub) -> Release sur le dépôt des versions (UpdateRepository, ici le même dépôt que le code) avec
 # Arcadia.exe en pièce jointe. Les Arcadia déjà installés la proposent ensuite au démarrage.
 param(
     [Parameter(Mandatory)] [string]$Version,
@@ -25,7 +25,7 @@ if (-not $Notes) { $Notes = "Arcadia $Version" }
 $xml = [xml](Get-Content $csproj -Raw -Encoding UTF8)
 $repo = ($xml.Project.PropertyGroup | ForEach-Object { $_.UpdateRepository } | Where-Object { $_ }) | Select-Object -First 1
 if (-not $repo -or $repo -like "VOTRE-PSEUDO*") {
-    throw "Indiquez d'abord votre dépôt public des versions dans Arcadia.csproj, ex. <UpdateRepository>pseudo/arcadia-releases</UpdateRepository>"
+    throw "Indiquez d'abord votre dépôt public des versions dans Arcadia.csproj, ex. <UpdateRepository>pseudo/arcadia</UpdateRepository>"
 }
 $current = ($xml.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ }) | Select-Object -First 1
 Push-Location $root
@@ -55,7 +55,7 @@ try {
     $exe = Join-Path $root "publish\Arcadia.exe"
     if (-not (Test-Path $exe)) { git checkout -- $csproj; throw "Arcadia.exe n'a pas été produit" }
 
-    # --- Git : commit + tag (+ envoi sur le dépôt privé) ---------------------------------------------
+    # --- Git : commit + tag (+ envoi sur GitHub) ------------------------------------------------------
     git add $csproj
     git diff --cached --quiet
     if ($LASTEXITCODE -ne 0) { git commit -m "Arcadia $Version" | Out-Null }
