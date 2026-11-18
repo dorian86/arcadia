@@ -128,6 +128,10 @@ public sealed class SteamClient
         }
     }
 
+    /// <summary>Official achievement list of a game, in French (public endpoint, no key). Raw JSON.</summary>
+    public Task<string> GetAchievementsJsonAsync(int appId, CancellationToken ct = default) =>
+        GetThrottledAsync($"https://api.steampowered.com/IPlayerService/GetGameAchievements/v1/?appid={appId}&language=french", ct);
+
     private static SteamItem? Parse(JsonElement it)
     {
         var appId = it.Int("appid") ?? it.Int("id");

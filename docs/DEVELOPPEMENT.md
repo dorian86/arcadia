@@ -59,6 +59,8 @@ Désinstaller : *Paramètres Windows → Applications → Arcadia → Désinstal
 
 **Lancement et temps de jeu**
 - Lancement identique à l'Explorateur Windows (arguments, dossier de travail, UAC).
+- **Succès des jeux Steam** : la liste officielle (voir ci-dessous) + ce qui est débloqué, lu dans le cache du client Steam sur ce PC (`Steam\appcache\stats\UserGameStatsSchema_<app>.bin` et `UserGameStats_<compte>_<app>.bin`, KeyValues binaires : un bit par succès, avec sa date). Hors ligne, sans clé ni profil public ; relu au démarrage, à l'ouverture de la fiche et après chaque session. Lecture seule (les plus récents en premier).
+- **Succès des jeux hors plateforme** (`.exe`, raccourcis : plateforme « Jeux installés ») : dès qu'un jeu est ajouté et identifié, Arcadia récupère la liste officielle de ses succès sur Steam (API publique `IPlayerService/GetGameAchievements`, sans clé : noms et descriptions en français, icônes, % de joueurs). Les jeux identifiés ailleurs (Wikipédia…) sont cherchés sur Steam par leur nom, avec une correspondance quasi exacte. Dans la fiche, chaque succès se coche d'un clic (date enregistrée, succès secrets masqués tant qu'ils ne sont pas obtenus) ; *Actualiser* recharge la liste sans perdre ce qui est coché, et le menu du jeu propose *Rechercher les succès*. Les jeux Epic / GOG / Ubisoft / Xbox et les jeux émulés ne sont pas concernés.
 - **Temps de jeu mesuré y compris pour les jeux Steam / Epic / Ubisoft** : Arcadia suit les processus lancés depuis le dossier d'installation du jeu. Historique des sessions → page Statistiques (activité sur 12 semaines, jeux les plus joués, sessions, répartition par plateforme).
 - Arcadia se réduit au lancement et revient quand vous quittez le jeu.
 
@@ -117,13 +119,13 @@ Prérequis : **SDK .NET 10**, Windows 10/11.
 
 ```powershell
 dotnet build src\Arcadia\Arcadia.csproj                     # compiler
-dotnet test tests\Arcadia.Tests\Arcadia.Tests.csproj         # 75 tests
+dotnet test tests\Arcadia.Tests\Arcadia.Tests.csproj         # 80 tests
 powershell -ExecutionPolicy Bypass -File tools\publish.ps1   # publish\Arcadia.exe autonome
 ```
 
 > Sur ce PC, le SDK .NET 10 est installé dans `%LOCALAPPDATA%\Microsoft\dotnet` ; `tools\build.ps1` et `tools\publish.ps1` l'utilisent automatiquement.
 
-Options développeur : `--data <dossier>` (bibliothèque séparée / portable), `--import <chemin>`, `--tray` (démarrer dans la zone de notification), `--tv`, `--snapshot <png>` (+ `--section`, `--detail n`, `--dialog edit|cover|confirm|scan|collections|emulators|roulette|themes`, `--theme <clé>` (wii, wiiu, switch, switch-light, ps3, ps4, ps5), `--keys Right,Enter…` (touches envoyées au thème avant la capture), `--mouse "move 300 400; click; wheel 2; back"` (pilote la vraie souris avant la capture), `--wait-metadata`, `--size LxH`, `--perf`, `--play <nom>`, `--hover` : affiche toutes les jaquettes dans leur état « survolé », `--scroll <px>` : fait défiler la liste avant la capture). `tools\snapshot.ps1` automatise les captures.
+Options développeur : `--data <dossier>` (bibliothèque séparée / portable), `--import <chemin>`, `--tray` (démarrer dans la zone de notification), `--tv`, `--snapshot <png>` (+ `--section`, `--detail n` ou `--detail-name <nom>`, `--dialog edit|cover|confirm|scan|collections|emulators|roulette|themes`, `--theme <clé>` (wii, wiiu, switch, switch-light, ps3, ps4, ps5), `--keys Right,Enter…` (touches envoyées au thème avant la capture), `--mouse "move 300 400; click; wheel 2; back"` (pilote la vraie souris avant la capture), `--wait-metadata`, `--size LxH`, `--perf`, `--play <nom>`, `--hover` : affiche toutes les jaquettes dans leur état « survolé », `--scroll <px>` : fait défiler la liste avant la capture). `tools\snapshot.ps1` automatise les captures.
 
 ## Partager et mettre à jour (GitHub)
 
@@ -159,7 +161,7 @@ src/Arcadia
 │   └── Shells/    thèmes de console (Wii, Wii U, Switch, PS3, PS4, PS5) + fenêtre Thèmes
 ├── Controls/      GameGrid (virtualisée), ImageLoader (asynchrone, cache), SmoothScroll, GameMenu…
 └── Themes/        palette, styles, modèles
-tests/Arcadia.Tests   75 tests
+tests/Arcadia.Tests   80 tests
 ```
 
 ## Limites connues

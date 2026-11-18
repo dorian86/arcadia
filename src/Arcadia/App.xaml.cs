@@ -34,6 +34,7 @@ public partial class App : Application
         public int SnapshotDelay = 2500;
         public string? Section;
         public int? Detail;
+        public string? DetailName;
         public string? Dialog;
         public bool WaitMetadata;
         public string? Play;
@@ -67,6 +68,7 @@ public partial class App : Application
                     case "--snapshot-delay": int.TryParse(Next(), out o.SnapshotDelay); break;
                     case "--section": o.Section = Next(); break;
                     case "--detail": o.Detail = int.TryParse(Next(), out var d) ? d : 0; break;
+                    case "--detail-name": o.DetailName = Next(); break;
                     case "--dialog": o.Dialog = Next(); break;
                     case "--wait-metadata": o.WaitMetadata = true; break;
                     case "--play": o.Play = Next(); break;
@@ -297,6 +299,8 @@ public partial class App : Application
         await Task.Delay(400);
         if (o.Detail is int index && vm.VisibleGames.Count > 0)
             vm.DetailGame = (vm.Section == Section.Home ? vm.RecentlyAdded : vm.VisibleGames)[Math.Clamp(index, 0, vm.VisibleGames.Count - 1)];
+        if (o.DetailName != null)
+            vm.DetailGame = vm.Library.Games.FirstOrDefault(g => g.Name.Contains(o.DetailName, StringComparison.OrdinalIgnoreCase)) ?? vm.DetailGame;
         var first = vm.DetailGame ?? vm.VisibleGames.FirstOrDefault() ?? vm.Library.Games.FirstOrDefault();
         if (first != null)
         {
@@ -328,7 +332,8 @@ public partial class App : Application
         if (o.Scroll > 0)
         {
             // scroll the page's main list (the widest scrollable viewer) to check cards cut by its edge
-            var main = FindAll<System.Windows.Controls.ScrollViewer>(window).Where(s => s.IsVisible && s.ScrollableHeight > 0).MaxBy(s => s.ActualWidth);
+            // (equal widths: the last one in the tree is drawn on top, e.g. a game page over the home page)
+            var main = FindAll<System.Windows.Controls.ScrollViewer>(window).Where(s => s.IsVisible && s.ScrollableHeight > 0).OrderBy(s => s.ActualWidth).LastOrDefault();
             main?.ScrollToVerticalOffset(o.Scroll);
             window.UpdateLayout();
             Log.Info($"--scroll: {main?.ActualWidth} offset {main?.VerticalOffset} / {main?.ScrollableHeight}");

@@ -290,6 +290,108 @@
                         </Border>
                     </UniformGrid>
 
+                    <!-- Achievements (official list from Steam, ticked by the player) -->
+                    <StackPanel Margin="0,44,0,0" Visibility="{Binding HasAchievements, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Succès" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="{Binding AchievementsProgressText}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}"
+                                           VerticalAlignment="Bottom" Margin="14,0,0,2"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource LinkButton}" Content="Actualiser" c:Ui.Glyph="&#xE72C;" VerticalAlignment="Bottom"
+                                    ToolTip="Recharger la liste officielle (vos succès obtenus sont conservés)"
+                                    Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=RefreshAchievementsCommand}" CommandParameter="{Binding}"/>
+                        </Grid>
+                        <Grid Height="6" Margin="0,14,0,0">
+                            <Border CornerRadius="3" Background="#1FFFFFFF"/>
+                            <Border CornerRadius="3" Background="{DynamicResource AccentGradient}" HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="{Binding AchievementsRatio}"/>
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
+                        <TextBlock Margin="0,10,0,0" FontSize="12.5" Foreground="{StaticResource TextMuted}" Text="{Binding AchievementsHint}"/>
+
+                        <!-- filled from code: only the cards shown are created (some games have hundreds of achievements) -->
+                        <Border x:Name="AchievementsBox" Margin="0,16,0,0" SizeChanged="AchievementsBox_SizeChanged">
+                            <ItemsControl x:Name="AchievementList" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type m:Achievement}">
+                                        <Button Width="392" Height="96" Margin="0,0,12,12" Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                                IsHitTestVisible="{Binding DataContext.AchievementsSynced, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource InvertBool}}"
+                                                Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=ToggleAchievementCommand}" CommandParameter="{Binding}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Card" CornerRadius="12" Background="#99141822" BorderBrush="{StaticResource Stroke}" BorderThickness="1" Padding="12,10">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="56"/>
+                                                                <ColumnDefinition Width="14"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Grid Width="56" Height="56" VerticalAlignment="Center">
+                                                                <Border CornerRadius="8" Background="{StaticResource Surface2}"/>
+                                                                <TextBlock Text="&#xE735;" Style="{StaticResource Glyph}" FontSize="20" Foreground="{StaticResource TextMuted}"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <Border x:Name="Icon" CornerRadius="8" c:ImageLoader.Source="{Binding IconUrl}" c:ImageLoader.DecodeWidth="64"/>
+                                                            </Grid>
+                                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock x:Name="Desc" Text="{Binding ShownDescription}" FontSize="12.5" Foreground="{StaticResource TextSecondary}"
+                                                                           TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="34" Margin="0,2,0,0"/>
+                                                                <TextBlock Text="{Binding StatusText}" FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="0,3,0,0"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                            </StackPanel>
+                                                            <Border x:Name="Check" Grid.Column="3" Width="26" Height="26" CornerRadius="13" BorderThickness="1.5"
+                                                                    BorderBrush="#40FFFFFF" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                                <TextBlock x:Name="Mark" Text="&#xE73E;" Style="{StaticResource Glyph}" FontSize="12" Foreground="White"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSecret}" Value="True">
+                                                            <Setter TargetName="Desc" Property="FontStyle" Value="Italic"/>
+                                                            <Setter Property="ToolTip" Value="Sa description apparaîtra une fois le succès obtenu"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsUnlocked}" Value="True">
+                                                            <Setter TargetName="Card" Property="Background" Value="{DynamicResource AccentSoft}"/>
+                                                            <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                            <Setter TargetName="Check" Property="Background" Value="{DynamicResource Accent}"/>
+                                                            <Setter TargetName="Check" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                            <Setter TargetName="Mark" Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Check" Property="BorderBrush" Value="White"/>
+                                                        </Trigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                                                <Condition Binding="{Binding IsUnlocked}" Value="False"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter TargetName="Card" Property="BorderBrush" Value="{StaticResource HairlineLight}"/>
+                                                            <Setter TargetName="Card" Property="Background" Value="#CC1A1F2B"/>
+                                                        </MultiDataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                        <Button x:Name="ShowAllAchievements" Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="0,2,0,0"
+                                Content="Afficher plus" c:Ui.Glyph="&#xE70D;" Click="ShowAllAchievements_Click" Visibility="Collapsed"/>
+                    </StackPanel>
+
                     <!-- Screenshots -->
                     <StackPanel Margin="0,44,0,0" Visibility="{Binding HasScreenshots, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="Captures d'écran" Style="{StaticResource SectionTitle}"/>
@@ -352,9 +454,16 @@
                             </TextBlock>
 
                             <TextBlock Text="Mes notes" Style="{StaticResource SectionTitle}" Margin="0,34,0,0"/>
-                            <TextBox Style="{StaticResource MultiLineInputBox}" Margin="0,14,0,0" MinHeight="110" MaxHeight="260" MaxWidth="820" HorizontalAlignment="Stretch"
-                                     Background="#99141822" c:Ui.Placeholder="Où en êtes-vous ? Astuces, codes, boss à battre… (enregistré automatiquement)"
-                                     Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <!-- left-aligned and at most 820 wide (a MaxWidth on a stretched box would centre it in wide windows) -->
+                            <Grid Margin="0,14,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MaxWidth="820"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Style="{StaticResource MultiLineInputBox}" MinHeight="110" MaxHeight="260"
+                                         Background="#99141822" c:Ui.Placeholder="Où en êtes-vous ? Astuces, codes, boss à battre… (enregistré automatiquement)"
+                                         Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            </Grid>
                         </StackPanel>
 
                         <Border Grid.Column="2" CornerRadius="16" Background="#CC141822" BorderBrush="{StaticResource Stroke}"

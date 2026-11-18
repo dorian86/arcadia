@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -32,6 +32,7 @@ public partial class GameDetailView : UserControl
         if (_game != null) _game.PropertyChanged -= OnGamePropertyChanged;
         _game = game;
         Trailer.Stop();
+        ShowAllAchievementsList(false);
         if (game == null) return;
         game.PropertyChanged += OnGamePropertyChanged;
         StartTrailer();
@@ -41,6 +42,9 @@ public partial class GameDetailView : UserControl
     {
         // trailers are fetched lazily the first time the page opens
         if (e.PropertyName == nameof(Game.Trailers) && !Trailer.IsPlaying) StartTrailer();
+        // a new list, or Steam reported new unlocks (they move to the front); a tick by hand changes nothing here
+        if (e.PropertyName == nameof(Game.Achievements) || e.PropertyName == nameof(Game.AchievementsUnlocked) && _game?.AchievementsSynced == true)
+            UpdateAchievementList();
     }
 
     private void StartTrailer()
@@ -82,4 +86,47 @@ public partial class GameDetailView : UserControl
     }
 
     private void MoreButton_Click(object sender, RoutedEventArgs e) => GameMenu.Open(MoreButton, PlacementMode.Bottom);
+
+    // ---- Achievements: three rows by default, then 60 more per click ---------------------
+    private const double AchievementCardWidth = 392 + 12;
+    private const int AchievementsPerClick = 60;
+    private int _extraAchievements;
+    private int _achievementColumns;
+
+    private int AchievementColumns => Math.Max(1, (int)((AchievementsBox.ActualWidth + 12) / AchievementCardWidth));
+
+    private void ShowAllAchievements_Click(object sender, RoutedEventArgs e)
+    {
+        var total = _game?.Achievements?.Count ?? 0;
+        var shown = AchievementColumns * 3 + _extraAchievements;
+        if (shown >= total) ShowAllAchievementsList(false);
+        else { _extraAchievements += AchievementsPerClick; UpdateAchievementList(); }
+    }
+
+    private void ShowAllAchievementsList(bool all)
+    {
+        _extraAchievements = all ? int.MaxValue / 2 : 0;
+        UpdateAchievementList();
+    }
+
+    private void AchievementsBox_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (AchievementColumns != _achievementColumns) UpdateAchievementList();
+    }
+
+    /// <summary>Creates only the cards shown: some games have hundreds of achievements (each with its icon to download).</summary>
+    private void UpdateAchievementList()
+    {
+        _achievementColumns = AchievementColumns;
+        var all = _game?.AchievementsOrdered ?? new List<Achievement>();
+        var count = Math.Min(all.Count, _achievementColumns * 3 + _extraAchievements);
+        AchievementList.ItemsSource = count >= all.Count ? all : all.Take(count).ToList();
+
+        var rest = all.Count - count;
+        ShowAllAchievements.Visibility = all.Count > _achievementColumns * 3 ? Visibility.Visible : Visibility.Collapsed;
+        ShowAllAchievements.Content = rest > 0
+            ? $"Afficher plus ({rest} autre{(rest > 1 ? "s" : "")})"
+            : "Réduire la liste";
+        Ui.SetGlyph(ShowAllAchievements, rest > 0 ? "" : "");
+    }
 }

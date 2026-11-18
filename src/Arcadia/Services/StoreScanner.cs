@@ -307,15 +307,18 @@ public static partial class StoreScanner
         "lime3ds", "suyu", "sudachi", "eden", "citron", "azahar", "vita3k", "shadps4", "xemu", "flycast", "lichii",
     };
 
+    /// <summary>
+    /// Platform of a game imported from a file, from how it is launched. Never from the Steam app id alone:
+    /// identification finds one for any game sold on Steam, including copies bought on Xbox, Epic...
+    /// </summary>
     public static GameStore Detect(Game g)
     {
         var t = g.LaunchTarget ?? "";
         var target = g.TargetPath ?? t;
-        if (t.StartsWith("steam:", StringComparison.OrdinalIgnoreCase) || g.SteamAppId != null && LaunchHelper.IsUri(t)) return GameStore.Steam;
+        if (LaunchesThroughSteam(g)) return GameStore.Steam;
         if (t.StartsWith("uplay:", StringComparison.OrdinalIgnoreCase)) return GameStore.Ubisoft;
         if (t.StartsWith("com.epicgames", StringComparison.OrdinalIgnoreCase)) return GameStore.Epic;
         if (t.StartsWith("shell:AppsFolder", StringComparison.OrdinalIgnoreCase)) return GameStore.Xbox;
-        if (target.Contains(@"\steamapps\common\", StringComparison.OrdinalIgnoreCase)) return GameStore.Steam;
         if (target.Contains(@"\Epic Games\", StringComparison.OrdinalIgnoreCase)) return GameStore.Epic;
         if (target.Contains(@"\GOG Galaxy\Games\", StringComparison.OrdinalIgnoreCase) || target.Contains(@"\GOG Games\", StringComparison.OrdinalIgnoreCase)) return GameStore.GOG;
         if (target.Contains(@"\XboxGames\", StringComparison.OrdinalIgnoreCase) || target.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)) return GameStore.Xbox;
@@ -325,6 +328,30 @@ public static partial class StoreScanner
         if (EmulatorNames.Contains(exe, StringComparer.OrdinalIgnoreCase) || NameCleaner.FindRomInArguments(g.Arguments) != null) return GameStore.Emulator;
         if (g.SourceKind == GameSourceKind.Shortcut && string.IsNullOrWhiteSpace(g.TargetPath)) return GameStore.Xbox; // advertised (Store) shortcut
         return LaunchHelper.IsUri(t) ? GameStore.Other : GameStore.Local;
+    }
+
+    /// <summary>
+    /// Platform of a game loaded from library.json: unknown (old libraries), or wrongly "Steam" because older
+    /// versions marked so any game identified on Steam (e.g. Xbox / Game Pass copies). Returns true when changed.
+    /// </summary>
+    public static bool CorrectStore(Game g)
+    {
+        if (g.Store != GameStore.Unknown && !(g.Store == GameStore.Steam && !LaunchesThroughSteam(g))) return false;
+        var store = Detect(g);
+        if (store == g.Store) return false;
+        if (g.Store != GameStore.Unknown) Log.Info($"Platform of '{g.Name}' corrected: {g.Store} -> {store}");
+        g.Store = store;
+        return true;
+    }
+
+    /// <summary>Started by Steam: a steam:// link, an exe of a Steam library, or steam.exe -applaunch.</summary>
+    public static bool LaunchesThroughSteam(Game g)
+    {
+        var t = g.LaunchTarget ?? "";
+        var target = g.TargetPath ?? t;
+        return t.StartsWith("steam:", StringComparison.OrdinalIgnoreCase)
+               || target.Contains(@"\steamapps\common\", StringComparison.OrdinalIgnoreCase)
+               || g.SteamAppId != null && string.Equals(Path.GetFileName(target), "steam.exe", StringComparison.OrdinalIgnoreCase);
     }
 
     [GeneratedRegex("\"path\"\\s+\"([^\"]+)\"", RegexOptions.IgnoreCase)]

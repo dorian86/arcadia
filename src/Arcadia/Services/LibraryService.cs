@@ -55,7 +55,7 @@ public sealed class LibraryService
                 if (!ids.Add(g.Id)) continue;
                 g.Collections ??= new List<string>();
                 g.Sessions ??= new List<PlaySession>();
-                if (g.Store == GameStore.Unknown) g.Store = StoreScanner.Detect(g);
+                StoreScanner.CorrectStore(g);
                 foreach (var c in g.Collections.Where(c => !Collections.Contains(c, StringComparer.CurrentCultureIgnoreCase)).ToList())
                     Collections.Add(c);
                 g.PropertyChanged += OnGamePropertyChanged;

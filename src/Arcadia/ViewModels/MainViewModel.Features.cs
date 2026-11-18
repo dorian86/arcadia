@@ -22,6 +22,7 @@ public partial class MainViewModel
         if (Settings.ImportSteamPlaytime) _ = SyncSteamPlaytimeAsync(silent: true);
         _ = RefreshEmulatorsAsync();
         _ = BuildAllTilesAsync();
+        _ = LookUpMissingAchievementsAsync();
         _ = CheckForUpdatesOnStartupAsync();
     }
 

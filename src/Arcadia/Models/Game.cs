@@ -145,7 +145,7 @@ public partial class Game : ObservableObject
     [ObservableProperty, NotifyPropertyChangedFor(nameof(SourceText))]
     private int? _steamAppId;
 
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(StoreLabel))]
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(StoreLabel), nameof(CanHaveAchievements), nameof(AchievementsSynced), nameof(AchievementsHint), nameof(HasAchievements))]
     private GameStore _store;
 
     /// <summary>Install folder (used to follow the game's process when a launcher starts it).</summary>
@@ -161,6 +161,14 @@ public partial class Game : ObservableObject
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasScreenshots))]
     private List<Screenshot>? _screenshots;
+
+    // ---- Achievements (official list from Steam, ticked by the player) ----------------
+    /// <summary>null = not looked up yet; empty = looked up, the game has none (or is not on Steam).</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasAchievements), nameof(AchievementsUnlocked), nameof(AchievementsProgressText), nameof(AchievementsRatio))]
+    private List<Achievement>? _achievements;
+
+    /// <summary>Steam game the list comes from (may be found by name for games identified elsewhere).</summary>
+    [ObservableProperty] private int? _achievementsAppId;
 
     /// <summary>Dominant colour of the cover (#RRGGBB), used for ambient lighting.</summary>
     [ObservableProperty] private string? _accentColor;
@@ -330,6 +338,45 @@ public partial class Game : ObservableObject
     [JsonIgnore] public string StoreLabel => StoreInfo.Label(Store);
     [JsonIgnore] public bool HasScreenshots => Screenshots is { Count: > 0 };
     [JsonIgnore] public bool HasTrailers => Trailers is { Count: > 0 };
+
+    /// <summary>
+    /// Steam games (unlocked achievements read from Steam on this PC) and games launched outside a store
+    /// (plain executables, shortcuts: official list from Steam, ticked by the player).
+    /// </summary>
+    [JsonIgnore] public bool CanHaveAchievements => Store is GameStore.Steam or GameStore.Local or GameStore.Other or GameStore.Unknown;
+    /// <summary>Steam itself says what is unlocked: the list is read-only.</summary>
+    [JsonIgnore] public bool AchievementsSynced => Store == GameStore.Steam;
+
+    [JsonIgnore]
+    public string AchievementsHint => AchievementsSynced
+        ? "Synchronisé automatiquement avec vos succès Steam."
+        : "Cliquez sur un succès pour le cocher quand vous l'avez obtenu dans le jeu. Liste officielle de Steam.";
+    [JsonIgnore] public bool HasAchievements => CanHaveAchievements && Achievements is { Count: > 0 };
+
+    /// <summary>
+    /// Display order: Steam games show the latest unlocked first; a list ticked by hand keeps the official
+    /// order (cards must not move under the mouse).
+    /// </summary>
+    [JsonIgnore]
+    public List<Achievement> AchievementsOrdered => Achievements is not { Count: > 0 } list ? new()
+        : AchievementsSynced
+            ? list.Where(a => a.IsUnlocked).OrderByDescending(a => a.UnlockedAt).Concat(list.Where(a => !a.IsUnlocked)).ToList()
+            : list;
+    [JsonIgnore] public int AchievementsUnlocked => Achievements?.Count(a => a.IsUnlocked) ?? 0;
+    [JsonIgnore] public double AchievementsRatio => HasAchievements ? (double)AchievementsUnlocked / Achievements!.Count : 0;
+
+    [JsonIgnore]
+    public string AchievementsProgressText => HasAchievements
+        ? $"{AchievementsUnlocked} / {Achievements!.Count}  ·  {Math.Round(AchievementsRatio * 100)} %"
+        : "";
+
+    /// <summary>Called after an achievement was ticked: updates the progress (and saves the library).</summary>
+    public void RefreshAchievementProgress()
+    {
+        OnPropertyChanged(nameof(AchievementsUnlocked));
+        OnPropertyChanged(nameof(AchievementsRatio));
+        OnPropertyChanged(nameof(AchievementsProgressText));
+    }
     [JsonIgnore] public string StatusLabel => StatusInfo.Label(Status);
     [JsonIgnore] public string StatusGlyph => StatusInfo.Glyph(Status);
     [JsonIgnore] public bool HasStatusBadge => Status is GameStatus.Playing or GameStatus.Finished;

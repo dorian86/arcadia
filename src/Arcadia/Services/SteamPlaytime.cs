@@ -107,6 +107,10 @@ public static class SteamPlaytime
         return result;
     }
 
+    /// <summary>Steam account (32-bit id, name of its userdata folder) that logged in last on this PC.</summary>
+    public static string? CurrentAccountId(string steamRoot) =>
+        LocalConfigFile(steamRoot) is { } f ? new DirectoryInfo(Path.GetDirectoryName(f)!).Parent?.Name : null;
+
     private static string? LocalConfigFile(string steamRoot)
     {
         try

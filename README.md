@@ -27,6 +27,7 @@ Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, d
 - 🔍 **Détection automatique** des jeux installés : Steam, Epic Games, GOG, Ubisoft Connect et Xbox / Game Pass. Pour le reste, glissez simplement vos raccourcis ou vos `.exe` dans la fenêtre.
 - 🖼️ **Jaquettes, illustrations et logos** trouvés tout seuls, avec le vrai nom de chaque jeu, même à partir d'un raccourci nommé `GTA5.exe - Raccourci`.
 - ⏱️ **Temps de jeu**, y compris pour les jeux Steam et Epic, et reprise de votre historique Steam.
+- 🏆 **Succès** : ceux de vos jeux Steam s'affichent et se synchronisent tout seuls (lus sur votre PC, même hors ligne). Pour vos jeux lancés en `.exe` ou par raccourci, Arcadia récupère la liste officielle (en français, avec icônes et rareté) et vous cochez ceux que vous avez obtenus.
 - 🎮 **Mode TV** plein écran pour jouer depuis le canapé avec une manette Xbox.
 - 🕹️ **Émulateurs** : vos ROM deviennent des jeux comme les autres, avec leur jaquette.
 - 🎨 **Thèmes d'interface** dans l'esprit des menus de consoles : Wii, Wii U, Switch, PS3, PS4 et PS5.

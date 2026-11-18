@@ -297,6 +297,7 @@ public partial class MainViewModel : ObservableObject
 
     private void OnGameChanged(Game game, string? property)
     {
+        OnGameChangedForAchievements(game, property);
         switch (property)
         {
             case nameof(Game.Name):
@@ -336,6 +337,7 @@ public partial class MainViewModel : ObservableObject
 
     private void OnGameExited(Game game)
     {
+        _ = SyncSteamAchievementsAfterSessionAsync(game);
         if (_minimizedByLaunch && !Library.Games.Any(g => g.IsRunning))
         {
             _minimizedByLaunch = false;
@@ -375,6 +377,7 @@ public partial class MainViewModel : ObservableObject
     {
         UpdateAmbient();
         if (value != null) _ = Metadata.EnsureScreenshotsAsync(value);
+        if (value != null) _ = SyncSteamAchievementsAsync(value);
         OnDetailClosedForShell(value);
     }
 

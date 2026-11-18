@@ -57,6 +57,10 @@
                   Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=RefreshMetadataCommand}" CommandParameter="{Binding}">
             <MenuItem.Icon><TextBlock Text="&#xE72C;" Style="{StaticResource Glyph}" FontSize="13"/></MenuItem.Icon>
         </MenuItem>
+        <MenuItem Header="Rechercher les succès" Visibility="{Binding CanHaveAchievements, Converter={StaticResource BoolToVis}}"
+                  Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=RefreshAchievementsCommand}" CommandParameter="{Binding}">
+            <MenuItem.Icon><TextBlock Text="&#xE735;" Style="{StaticResource Glyph}" FontSize="13"/></MenuItem.Icon>
+        </MenuItem>
         <MenuItem Header="Ouvrir l'emplacement du fichier" IsEnabled="{Binding CanOpenLocation}"
                   Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenLocationCommand}" CommandParameter="{Binding}">
             <MenuItem.Icon><TextBlock Text="&#xE838;" Style="{StaticResource Glyph}" FontSize="13"/></MenuItem.Icon>
