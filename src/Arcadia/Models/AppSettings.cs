@@ -39,6 +39,12 @@ public partial class AppSettings : ObservableObject
     /// <summary>Darkening laid over the image so that text stays readable (0-90 %).</summary>
     [ObservableProperty] private double _wallpaperDim = 70;
 
+    /// <summary>Last year whose "Ton année de jeu" was announced.</summary>
+    [ObservableProperty] private int _recapAnnounced;
+
+    /// <summary>The first-launch assistant was shown (or skipped).</summary>
+    [ObservableProperty] private bool _onboardingDone;
+
     // ---- Sound ----
     [ObservableProperty] private bool _soundEnabled = true;
     [ObservableProperty] private double _soundVolume = 0.5;

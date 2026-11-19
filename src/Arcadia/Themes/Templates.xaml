@@ -549,6 +549,12 @@
     <DataTemplate DataType="{x:Type vm:LightboxViewModel}">
         <v:LightboxDialog/>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:RecapViewModel}">
+        <v:RecapDialog/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:OnboardingViewModel}">
+        <v:OnboardingDialog/>
+    </DataTemplate>
 
     <!-- ======================= Toast ======================= -->
     <DataTemplate x:Key="ToastTemplate" DataType="{x:Type vm:ToastMessage}">

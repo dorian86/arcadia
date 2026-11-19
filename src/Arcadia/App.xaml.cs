@@ -147,7 +147,10 @@ public partial class App : Application
         };
 
         ShadowFactory.Register(Resources);
+        var firstRun = !File.Exists(AppPaths.SettingsFile) && !File.Exists(AppPaths.SettingsFile + ".bak");
         var settings = new SettingsService();
+        // libraries created before the assistant existed: never show it to them
+        if (!firstRun && !settings.Settings.OnboardingDone) settings.Settings.OnboardingDone = true;
         ThemeService.Apply(Resources, settings.Settings.AccentPreset);
         if (!options.IsDeveloperRun && settings.Settings.StartWithWindows != InstallService.StartsWithWindows)
             InstallService.SetStartWithWindows(settings.Settings.StartWithWindows);
@@ -172,6 +175,7 @@ public partial class App : Application
         {
             window.Show();
             if (!options.IsDeveloperRun && options.UpdatedFrom == null) _vm.Sound.PlayStartup();
+            if (!settings.Settings.OnboardingDone && options.Snapshot == null) _vm.OpenOnboardingCommand.Execute(null);
         }
         if (options.Tv) _vm.EnterTvModeCommand.Execute(null);
 
@@ -308,6 +312,7 @@ public partial class App : Application
             vm.DetailGame = (vm.Section == Section.Home ? vm.RecentlyAdded : vm.VisibleGames)[Math.Clamp(index, 0, vm.VisibleGames.Count - 1)];
         if (o.DetailName != null)
             vm.DetailGame = vm.Library.Games.FirstOrDefault(g => g.Name.Contains(o.DetailName, StringComparison.OrdinalIgnoreCase)) ?? vm.DetailGame;
+        if (o.Dialog == "onboarding") vm.OpenOnboardingCommand.Execute(null); // shown on an empty library too
         var first = vm.DetailGame ?? vm.VisibleGames.FirstOrDefault() ?? vm.Library.Games.FirstOrDefault();
         if (first != null)
         {
@@ -321,6 +326,7 @@ public partial class App : Application
                 case "emulators": vm.ManageEmulatorsCommand.Execute(null); break;
                 case "roulette": vm.OpenRouletteCommand.Execute(null); break;
                 case "themes": vm.OpenThemesCommand.Execute(null); break;
+                case "recap": vm.OpenRecapCommand.Execute(null); break;
             }
         }
 

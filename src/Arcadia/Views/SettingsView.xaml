@@ -334,6 +334,19 @@
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
                     <TextBlock Text="Bibliothèque" Style="{StaticResource CardHeader}" Margin="0,0,0,18"/>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Assistant de démarrage" Style="{StaticResource RowTitle}"/>
+                            <TextBlock Text="Détection des jeux installés, choix de l'interface, de la couleur et du fond d'écran." Style="{StaticResource RowHint}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE768;" Content="Relancer l'assistant"
+                                Command="{Binding OpenOnboardingCommand}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>

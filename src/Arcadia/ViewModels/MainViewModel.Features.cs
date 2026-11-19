@@ -23,6 +23,7 @@ public partial class MainViewModel
         _ = RefreshEmulatorsAsync();
         _ = BuildAllTilesAsync();
         _ = LookUpMissingAchievementsAsync();
+        _ = StartTrophiesAsync();
         _ = CheckForUpdatesOnStartupAsync();
     }
 

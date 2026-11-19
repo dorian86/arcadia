@@ -284,8 +284,14 @@ public sealed class BarItem
 
 public sealed class StatsViewModel
 {
-    public StatsViewModel(List<Game> games)
+    public StatsViewModel(List<Game> games, List<TrophyItem>? trophies = null)
     {
+        Trophies = trophies ?? new List<TrophyItem>();
+        TrophyCount = $"{Trophies.Count(t => t.IsUnlocked)} / {Trophies.Count}";
+        TrophyTiers = string.Join("   ·   ", new[] { TrophyTier.Platine, TrophyTier.Or, TrophyTier.Argent, TrophyTier.Bronze }
+            .Select(tier => (tier, n: Trophies.Count(t => t.IsUnlocked && t.Def.Tier == tier)))
+            .Where(x => x.n > 0)
+            .Select(x => $"{x.n} {x.tier switch { TrophyTier.Bronze => "bronze", TrophyTier.Argent => "argent", TrophyTier.Or => "or", _ => "platine" }}"));
         var visible = games.Where(g => !g.IsHidden).ToList();
         var total = visible.Sum(g => g.PlayTimeSeconds);
         var sessions = visible.SelectMany(g => g.Sessions).ToList();
@@ -336,6 +342,16 @@ public sealed class StatsViewModel
     public List<BarItem> Weeks { get; }
     public bool HasActivity { get; }
     public List<BarItem> Platforms { get; }
+
+    // ---- Arcadia trophies ----
+    public List<TrophyItem> Trophies { get; }
+    public bool HasTrophies => Trophies.Count > 0;
+    public string TrophyCount { get; }
+    public string TrophyTiers { get; }
+
+    /// <summary>Year shown on the "Ton année de jeu" banner.</summary>
+    public int RecapYear => DateTime.Today.Month == 1 && DateTime.Today.Day <= 15 ? DateTime.Today.Year - 1 : DateTime.Today.Year;
+    public string RecapTitle => $"Ton année de jeu {RecapYear}";
 }
 
 // ========================================================================================

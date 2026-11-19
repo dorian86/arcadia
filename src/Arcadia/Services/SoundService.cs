@@ -4,7 +4,7 @@ using Arcadia.Models;
 
 namespace Arcadia.Services;
 
-public enum Sfx { Click, Tick, Navigate, Open, Back, Launch, FavoriteOn, FavoriteOff, Error, Notify, Toggle, Pop, PopNav, Clack, ClackNav, Tock, TockNav, Startup }
+public enum Sfx { Click, Tick, Navigate, Open, Back, Launch, FavoriteOn, FavoriteOff, Error, Notify, Toggle, Pop, PopNav, Clack, ClackNav, Tock, TockNav, Startup, Trophy }
 
 /// <summary>
 /// Subtle UI sounds, synthesised at first start (no external assets) and played through WPF MediaPlayers.
@@ -163,6 +163,7 @@ public sealed class SoundService
         Sfx.Click => 0.6,
         Sfx.Launch => 0.9,
         Sfx.Startup => 0.8,
+        Sfx.Trophy => 0.7,
         _ => 0.75,
     };
 
@@ -185,6 +186,10 @@ public sealed class SoundService
         Sfx.FavoriteOff => Mix(0.3, Glide(900, 600, 0, 0.12, 0.25)),
         Sfx.Error => Reverb(Mix(0.55, Bell(440, 0, 0.25, 0.3, harmonic: 0.35), Bell(349.2, 0.12, 0.35, 0.3, harmonic: 0.35)), 0.2),
         Sfx.Notify => Reverb(Mix(0.6, Bell(784, 0, 0.45, 0.26), Bell(1568, 0, 0.3, 0.06)), 0.3),
+        // bright rising sparkle (C - E - G - C) with a shimmering top
+        Sfx.Trophy => Reverb(Mix(1.1,
+            Bell(1046.5, 0.00, 0.45, 0.2), Bell(1318.5, 0.07, 0.45, 0.2), Bell(1568.0, 0.14, 0.55, 0.22),
+            Bell(2093.0, 0.21, 0.8, 0.22), Bell(3136.0, 0.21, 0.35, 0.05), Glide(523, 1046, 0, 0.2, 0.08)), 0.4),
         // warm rising chord (G - D - G - D - G) over a soft swell, with a little sparkle on top
         Sfx.Startup => Reverb(Mix(1.6,
             Glide(98, 196, 0, 0.9, 0.08),

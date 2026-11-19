@@ -26,6 +26,27 @@
             <TextBlock Text="Statistiques" Style="{StaticResource PageTitle}"/>
             <TextBlock Text="Votre activité de jeu mesurée par Arcadia." Style="{StaticResource PageSubtitle}" Margin="0,4,0,28"/>
 
+            <!-- Year in review -->
+            <Border CornerRadius="18" Margin="0,0,0,18" ClipToBounds="True" BorderBrush="{StaticResource Stroke}" BorderThickness="1">
+                <Grid>
+                    <Border Background="{DynamicResource AccentGradient}" Opacity="0.85"/>
+                    <Ellipse Fill="#33FFFFFF" Width="320" Height="320" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-150,40,0"/>
+                    <Ellipse Fill="#22FFFFFF" Width="200" Height="200" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-40,-110"/>
+                    <Grid Margin="28,22">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding RecapTitle}" FontFamily="{StaticResource DisplayFont}" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Tes jeux les plus joués, tes heures, tes records et tes trophées de l'année." FontSize="13.5" Foreground="#E6FFFFFF" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE768;" Content="Voir mon récap" Height="42" Padding="18,0"
+                                Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenRecapCommand}"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
             <!-- KPIs -->
             <UniformGrid Columns="4" Margin="0,0,-16,0">
                 <Border Style="{StaticResource Card}" Margin="0,0,16,0">
@@ -173,6 +194,60 @@
                     </StackPanel>
                 </Border>
             </Grid>
+
+            <!-- Arcadia trophies -->
+            <Border Style="{StaticResource Card}" Margin="0,18,0,0" Visibility="{Binding HasTrophies, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Trophées Arcadia" Style="{StaticResource SectionTitle}" FontSize="17"/>
+                        <TextBlock Text="{Binding TrophyCount}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Bottom" Margin="12,0,0,1"/>
+                        <TextBlock Text="{Binding TrophyTiers}" FontSize="12.5" Foreground="{StaticResource TextMuted}" VerticalAlignment="Bottom" Margin="16,0,0,2"/>
+                    </StackPanel>
+                    <TextBlock Text="Des étapes pour tous vos jeux, même ceux sans succès : temps de jeu, jeux terminés, séries de jours…" FontSize="12.5"
+                               Foreground="{StaticResource TextMuted}" Margin="0,4,0,18"/>
+                    <ItemsControl ItemsSource="{Binding Trophies}" Focusable="False" Margin="0,0,-12,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:TrophyItem}">
+                                <Border x:Name="Card" CornerRadius="12" Background="{StaticResource Surface2}" BorderBrush="{StaticResource Stroke}" BorderThickness="1"
+                                        Padding="14,12" Margin="0,0,12,12" ToolTip="{Binding TierLabel}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid x:Name="Medal" Width="46" Height="46" VerticalAlignment="Center">
+                                            <Ellipse Fill="{Binding TierBrush}" Opacity="0.22"/>
+                                            <Ellipse Stroke="{Binding TierBrush}" StrokeThickness="2"/>
+                                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="18" Foreground="{Binding TierBrush}"/>
+                                        </Grid>
+                                        <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{StaticResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                            <Grid x:Name="Bar" Height="4" Margin="0,8,0,0" Visibility="Collapsed">
+                                                <Border CornerRadius="2" Background="{StaticResource Surface3}"/>
+                                                <Border CornerRadius="2" Background="{Binding TierBrush}" HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
+                                                    <Border.RenderTransform><ScaleTransform ScaleX="{Binding Ratio}"/></Border.RenderTransform>
+                                                </Border>
+                                            </Grid>
+                                            <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsUnlocked}" Value="False">
+                                        <Setter TargetName="Medal" Property="Opacity" Value="0.35"/>
+                                        <Setter TargetName="Bar" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="Card" Property="Background" Value="#80141822"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

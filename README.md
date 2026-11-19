@@ -27,6 +27,8 @@ Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, d
 - 🔍 **Détection automatique** des jeux installés : Steam, Epic Games, GOG, Ubisoft Connect et Xbox / Game Pass. Pour le reste, glissez simplement vos raccourcis ou vos `.exe` dans la fenêtre.
 - 🖼️ **Jaquettes, illustrations et logos** trouvés tout seuls, avec le vrai nom de chaque jeu, même à partir d'un raccourci nommé `GTA5.exe - Raccourci`.
 - ⏱️ **Temps de jeu**, y compris pour les jeux Steam et Epic, et reprise de votre historique Steam.
+- 📰 **Actualités** de chaque jeu dans sa fiche : les dernières annonces officielles (mises à jour, événements).
+- 🏅 **Trophées Arcadia** pour tous vos jeux (temps de jeu, jeux terminés, séries de jours…) et **« Ton année de jeu »**, le récap de votre année : jeu de l'année, top 5, mois par mois, records.
 - 🏆 **Succès** : ceux de vos jeux Steam s'affichent et se synchronisent tout seuls (lus sur votre PC, même hors ligne). Pour vos jeux lancés en `.exe` ou par raccourci, Arcadia récupère la liste officielle (en français, avec icônes et rareté) et vous cochez ceux que vous avez obtenus.
 - 🎮 **Mode TV** plein écran pour jouer depuis le canapé avec une manette Xbox.
 - 🕹️ **Émulateurs** : vos ROM deviennent des jeux comme les autres, avec leur jaquette.
@@ -78,7 +80,7 @@ Changez complètement le look d'Arcadia depuis le menu **Thèmes**. Clavier, sou
 
 1. **[Téléchargez `Arcadia.exe`](https://github.com/dorian86/arcadia/releases/latest/download/Arcadia.exe)** et lancez-le. Aucune installation de .NET ni d'autre logiciel n'est nécessaire.
 2. Au premier lancement, Windows peut afficher **« Windows a protégé votre ordinateur »**, parce que le programme n'est pas signé par un éditeur payant. Cliquez sur **Informations complémentaires**, puis **Exécuter quand même**.
-3. Cliquez sur **Ajouter des jeux → Détecter les jeux installés**, ou glissez vos raccourcis de jeux dans la fenêtre.
+3. Un assistant vous accueille : il ajoute les jeux trouvés dans vos launchers, puis vous choisissez l'interface, la couleur et le fond d'écran. Vous pourrez ajouter d'autres jeux à tout moment en glissant leurs raccourcis dans la fenêtre.
 
 > **Astuce :** *Réglages → Système → Installer* copie Arcadia dans vos programmes, ajoute un raccourci dans le menu Démarrer et une entrée dans « Applications installées » pour le désinstaller proprement.
 

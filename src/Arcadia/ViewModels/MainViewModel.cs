@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -299,6 +299,7 @@ public partial class MainViewModel : ObservableObject
     private void OnGameChanged(Game game, string? property)
     {
         OnGameChangedForAchievements(game, property);
+        OnGameChangedForTrophies(property);
         switch (property)
         {
             case nameof(Game.Name):
@@ -351,7 +352,7 @@ public partial class MainViewModel : ObservableObject
         if (value is Section.Home or Section.Settings or Section.Stats && !string.IsNullOrEmpty(SearchText)) SearchText = "";
         DetailGame = null;
         ClearSelection();
-        if (value == Section.Stats) Stats = new StatsViewModel(Library.Games.ToList());
+        if (value == Section.Stats) Stats = new StatsViewModel(Library.Games.ToList(), BuildTrophyItems());
         OnPropertyChanged(nameof(IsLibrarySection));
         OnPropertyChanged(nameof(IsCollectionSection));
         Refresh();
@@ -379,6 +380,7 @@ public partial class MainViewModel : ObservableObject
         UpdateAmbient();
         if (value != null) _ = Metadata.EnsureScreenshotsAsync(value);
         if (value != null) _ = SyncSteamAchievementsAsync(value);
+        if (value != null) _ = LoadNewsAsync(value);
         OnDetailClosedForShell(value);
     }
 
@@ -477,7 +479,7 @@ public partial class MainViewModel : ObservableObject
         if (!featured.SequenceEqual(FeaturedGames)) FeaturedGames = featured;
         if (FeaturedGame == null || !featured.Contains(FeaturedGame)) FeaturedGame = featured.FirstOrDefault();
 
-        if (Section == Section.Stats) Stats = new StatsViewModel(everything);
+        if (Section == Section.Stats) Stats = new StatsViewModel(everything, BuildTrophyItems());
 
         OnPropertyChanged(nameof(HasGames));
         if (IsShellTheme) Shell?.Rebuild();
@@ -1025,6 +1027,8 @@ public partial class MainViewModel : ObservableObject
             var found = await Task.Run(StoreScanner.ScanAll);
             var fresh = found.Where(d => !Importer.IsInLibrary(d) && !Settings.IgnoredDetections.Contains(d.Key)).ToList();
             if (fresh.Count == 0) return;
+            // the first-launch assistant already offers them (step "Tes jeux")
+            if (!Settings.OnboardingDone || Dialogs.OfType<OnboardingViewModel>().Any()) return;
             Sound.Play(Sfx.Notify);
             ShowToast(fresh.Count == 1 ? $"Nouveau jeu installé détecté : « {fresh[0].Name} »" : $"{fresh.Count} jeux installés ne sont pas encore dans Arcadia",
                 ToastKind.Info, "Voir", () => Dialogs.Add(new ScanViewModel(this, found)), seconds: 12);
@@ -1212,6 +1216,7 @@ public partial class MainViewModel : ObservableObject
         var top = Dialogs[^1];
         if (top is CoverSearchViewModel search) search.CloseCommand.Execute(null);
         else if (top is ScanViewModel scan) scan.CloseCommand.Execute(null);
+        else if (top is OnboardingViewModel onboarding) onboarding.SkipCommand.Execute(null);
         else Dialogs.Remove(top);
         return true;
     }

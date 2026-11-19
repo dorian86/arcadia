@@ -392,6 +392,57 @@
                                 Content="Afficher plus" c:Ui.Glyph="&#xE70D;" Click="ShowAllAchievements_Click" Visibility="Collapsed"/>
                     </StackPanel>
 
+                    <!-- News: latest official announcements on Steam -->
+                    <StackPanel Margin="0,44,0,0" Visibility="{Binding HasNews, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Actualités" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Annonces officielles sur Steam" FontSize="13" Foreground="{StaticResource TextMuted}" VerticalAlignment="Bottom" Margin="14,0,0,3"/>
+                        </StackPanel>
+                        <ItemsControl x:Name="NewsList" ItemsSource="{Binding News}" Margin="0,16,-16,0" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><UniformGrid Columns="4"/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Margin="0,0,16,0" Cursor="Hand" FocusVisualStyle="{x:Null}" ToolTip="Lire l'annonce dans le navigateur"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenNewsCommand}" CommandParameter="{Binding}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Card" CornerRadius="14" Background="#99141822" BorderBrush="{StaticResource Stroke}" BorderThickness="1"
+                                                        ClipToBounds="True" RenderTransformOrigin="0.5,0.5">
+                                                    <Border.RenderTransform><ScaleTransform/></Border.RenderTransform>
+                                                    <StackPanel>
+                                                        <!-- the post's picture, or the game's artwork when it has none -->
+                                                        <Grid Height="150">
+                                                            <Border CornerRadius="13,13,0,0" Background="{StaticResource Surface2}"
+                                                                    c:ImageLoader.Source="{Binding DataContext.WideArtPath, ElementName=NewsList}" c:ImageLoader.DecodeWidth="420"/>
+                                                            <Border CornerRadius="13,13,0,0" c:ImageLoader.Source="{Binding ImageUrl}" c:ImageLoader.DecodeWidth="420"/>
+                                                        </Grid>
+                                                        <StackPanel Margin="16,14,16,16">
+                                                            <TextBlock Text="{Binding DateText}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap"
+                                                                       TextTrimming="CharacterEllipsis" MaxHeight="40" Margin="0,5,0,0"/>
+                                                            <TextBlock Text="{Binding Excerpt}" FontSize="12.5" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap"
+                                                                       TextTrimming="CharacterEllipsis" Height="54" LineHeight="18" Margin="0,6,0,0"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource AccentGradient}"/>
+                                                        <Setter TargetName="Card" Property="RenderTransform">
+                                                            <Setter.Value><ScaleTransform ScaleX="1.02" ScaleY="1.02"/></Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
                     <!-- Screenshots -->
                     <StackPanel Margin="0,44,0,0" Visibility="{Binding HasScreenshots, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="Captures d'écran" Style="{StaticResource SectionTitle}"/>

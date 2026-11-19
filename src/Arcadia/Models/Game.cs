@@ -170,6 +170,15 @@ public partial class Game : ObservableObject
     /// <summary>Steam game the list comes from (may be found by name for games identified elsewhere).</summary>
     [ObservableProperty] private int? _achievementsAppId;
 
+    /// <summary>Latest official announcements (loaded when the game page opens, never saved).</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasNews))]
+    [property: JsonIgnore]
+    private List<Services.Online.GameNews>? _news;
+
+    [JsonIgnore] public bool HasNews => News is { Count: > 0 };
+    /// <summary>Steam game whose announcements are shown.</summary>
+    [JsonIgnore] public int? NewsAppId => SteamAppId ?? AchievementsAppId;
+
     /// <summary>Dominant colour of the cover (#RRGGBB), used for ambient lighting.</summary>
     [ObservableProperty] private string? _accentColor;
 

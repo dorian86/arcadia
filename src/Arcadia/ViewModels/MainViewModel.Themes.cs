@@ -57,6 +57,11 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(ReturnToShellText));
         if (changed) UiThemeChanged?.Invoke();
         Sound.Play(Sfx.Open);
+        if (!theme.IsDefault)
+        {
+            Trophies.MarkThemeTried();
+            ScheduleTrophyCheck();
+        }
     }
 
     /// <summary>Opens a page of the classic interface from a console theme (game page, settings…).</summary>

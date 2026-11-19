@@ -98,6 +98,27 @@ public partial class MainWindow : Window
         scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.985, 1, TimeSpan.FromMilliseconds(520)) { EasingFunction = ease });
     }
 
+    /// <summary>The trophy banner slides down from the top, then back up (its content stays during the exit).</summary>
+    private void AnimateTrophyBanner(TrophyItem? trophy)
+    {
+        if (TrophyBannerView.RenderTransform is not TranslateTransform t) return;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        if (trophy != null)
+        {
+            TrophyBannerView.DataContext = trophy;
+            TrophyBannerView.Visibility = Visibility.Visible;
+            t.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(-140, 0, TimeSpan.FromMilliseconds(520)) { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 } });
+            TrophyBannerView.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300)));
+        }
+        else
+        {
+            var up = new DoubleAnimation(0, -140, TimeSpan.FromMilliseconds(380)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } };
+            up.Completed += (_, _) => { if (_vm.TrophyBanner == null) TrophyBannerView.Visibility = Visibility.Collapsed; };
+            t.BeginAnimation(TranslateTransform.YProperty, up);
+            TrophyBannerView.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(380)) { EasingFunction = ease });
+        }
+    }
+
     // ------------------------------------------------------------------------------------
     // Navigation animations
     // ------------------------------------------------------------------------------------
@@ -106,6 +127,9 @@ public partial class MainWindow : Window
     {
         switch (e.PropertyName)
         {
+            case nameof(MainViewModel.TrophyBanner):
+                AnimateTrophyBanner(_vm.TrophyBanner);
+                break;
             case nameof(MainViewModel.Section):
                 AnimateIn(_vm.Section switch
                 {
