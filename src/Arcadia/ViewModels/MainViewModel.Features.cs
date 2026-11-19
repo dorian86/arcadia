@@ -19,7 +19,11 @@ public partial class MainViewModel
         // newly identified Steam games: pick up their Steam play time as soon as identification is done
         Metadata.QueueEmptied += () => { if (Settings.ImportSteamPlaytime) _ = SyncSteamPlaytimeAsync(silent: true); };
         _ = GenerateMissingCoversAsync();
-        if (Settings.ImportSteamPlaytime) _ = SyncSteamPlaytimeAsync(silent: true);
+        if (Settings.ImportSteamPlaytime)
+        {
+            _ = SyncSteamPlaytimeAsync(silent: true);
+            _ = SyncEpicPlaytimeAsync(silent: true);
+        }
         _ = RefreshEmulatorsAsync();
         _ = BuildAllTilesAsync();
         _ = LookUpMissingAchievementsAsync();
@@ -256,7 +260,11 @@ public partial class MainViewModel
     // ------------------------------------------------------------------------------------
 
     [RelayCommand]
-    private Task ImportSteamPlaytime() => SyncSteamPlaytimeAsync(silent: false);
+    private async Task ImportSteamPlaytime()
+    {
+        await SyncSteamPlaytimeAsync(silent: false);
+        await SyncEpicPlaytimeAsync(silent: false);
+    }
 
     private async Task SyncSteamPlaytimeAsync(bool silent)
     {
@@ -293,6 +301,56 @@ public partial class MainViewModel
         {
             Log.Warn($"Steam play time import failed: {ex.Message}");
             if (!silent) ShowToast("Lecture du temps de jeu Steam impossible : " + ex.Message, ToastKind.Error);
+        }
+    }
+
+    /// <summary>
+    /// Play time recorded by the new Epic Games launcher (it keeps it on the PC). Matched by the game's Epic id
+    /// (store scan) or by the ".egstore" folder of games imported from their exe.
+    /// </summary>
+    private async Task SyncEpicPlaytimeAsync(bool silent)
+    {
+        try
+        {
+            var games = Library.Games.Where(g => g.Store == GameStore.Epic || g.Store == GameStore.Local).ToList();
+            var (data, ids) = await Task.Run(() =>
+            {
+                var playtime = EpicLauncher.ReadPlaytime();
+                var map = new Dictionary<Game, string>();
+                if (playtime.Count == 0) return (playtime, map);
+                foreach (var g in games)
+                {
+                    var app = g.Store == GameStore.Epic && g.StoreId != null && playtime.ContainsKey(g.StoreId) ? g.StoreId
+                              : EpicLauncher.FromGameFolder(!string.IsNullOrWhiteSpace(g.InstallDir) ? g.InstallDir
+                                                            : g.TargetPath is { Length: > 0 } t ? t : g.LaunchTarget)?.AppName;
+                    if (app != null) map[g] = app;
+                }
+                return (playtime, map);
+            });
+            if (data.Count == 0)
+            {
+                if (!silent) ShowToast("Aucune donnée de temps de jeu Epic trouvée sur ce PC", ToastKind.Warning);
+                return;
+            }
+            var updated = 0;
+            long added = 0;
+            foreach (var (g, app) in ids)
+            {
+                if (!data.TryGetValue(app, out var seconds) || seconds <= g.PlayTimeSeconds) continue;
+                // Epic also counts the sessions started from Arcadia: keep the larger value, never add both
+                added += seconds - g.PlayTimeSeconds;
+                g.PlayTimeSeconds = seconds;
+                updated++;
+            }
+            if (updated > 0) Log.Info($"Epic play time imported: +{added}s on {updated} game(s)");
+            if (!silent || added >= 3600)
+                ShowToast(updated == 0 ? "Temps de jeu Epic déjà à jour"
+                    : $"Temps de jeu Epic importé : +{Format.Duration(added)} sur {updated} jeu(x)", ToastKind.Success);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"Epic play time import failed: {ex.Message}");
+            if (!silent) ShowToast("Lecture du temps de jeu Epic impossible : " + ex.Message, ToastKind.Error);
         }
     }
 

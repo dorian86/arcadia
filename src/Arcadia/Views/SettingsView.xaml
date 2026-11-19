@@ -235,8 +235,8 @@
                         </Grid.ColumnDefinitions>
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ImportSteamPlaytime}" Margin="0,0,16,0">
                             <StackPanel>
-                                <TextBlock Text="Importer le temps de jeu Steam" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Au démarrage, Arcadia reprend le temps de jeu et la date de dernière partie enregistrés par Steam sur ce PC." Style="{StaticResource RowHint}"/>
+                                <TextBlock Text="Importer le temps de jeu Steam et Epic Games" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Au démarrage, Arcadia reprend le temps de jeu enregistré sur ce PC par Steam (avec la date de dernière partie) et par le launcher Epic Games." Style="{StaticResource RowHint}"/>
                             </StackPanel>
                         </CheckBox>
                         <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Importer maintenant" c:Ui.Glyph="&#xE896;" Command="{Binding ImportSteamPlaytimeCommand}"/>
@@ -245,7 +245,7 @@
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.TrackOutsidePlaytime}">
                         <StackPanel>
                             <TextBlock Text="Mesurer le temps de jeu des jeux lancés hors d'Arcadia" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="Tant qu'Arcadia est ouvert (même réduit dans la zone de notification), il reconnaît les jeux de votre bibliothèque lancés depuis Steam, Epic, l'EA app, Battle.net, Ubisoft, Xbox ou un raccourci, et ajoute leur temps de jeu. Epic, Xbox, EA, Ubisoft et Battle.net ne gardent pas ce temps sur votre PC : c'est la seule façon de le connaître." Style="{StaticResource RowHint}"/>
+                            <TextBlock Text="Tant qu'Arcadia est ouvert (même réduit dans la zone de notification), il reconnaît les jeux de votre bibliothèque lancés depuis Steam, Epic, l'EA app, Battle.net, Ubisoft, Xbox ou un raccourci, et ajoute leur temps de jeu. Xbox, EA, Ubisoft, Battle.net et Riot ne gardent pas ce temps sur votre PC : c'est la seule façon de le connaître." Style="{StaticResource RowHint}"/>
                         </StackPanel>
                     </CheckBox>
                     <Border Style="{StaticResource Divider}"/>

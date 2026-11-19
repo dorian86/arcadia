@@ -154,9 +154,60 @@ public static partial class StoreScanner
     // Epic Games
     // ------------------------------------------------------------------------------------
 
+    /// <summary>
+    /// Epic Games: the classic launcher's manifests, the new launcher's journal (2026), then games left by the
+    /// classic launcher in the Epic folders (".egstore") that the new one has not taken over.
+    /// </summary>
     private static IEnumerable<DetectedGame> ScanEpic()
     {
-        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Epic\EpicGamesLauncher\Data\Manifests");
+        var found = ScanEpicLegacy().ToList();
+        var dirs = found.Select(g => g.InstallDir!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var titles = EpicLauncher.ReadTitles();
+        foreach (var install in EpicLauncher.ReadNewLauncherInstalls())
+            if (dirs.Add(install.Dir) && ToDetected(install, titles, launcherKnowsIt: true) is { } game) found.Add(game);
+
+        foreach (var library in EpicLauncher.DefaultLibraries())
+        {
+            IEnumerable<string> subs;
+            try { subs = Directory.EnumerateDirectories(library).ToList(); } catch { continue; }
+            foreach (var sub in subs)
+                if (!dirs.Contains(sub) && EpicLauncher.FromEgstore(sub) is { } install && dirs.Add(install.Dir)
+                    && ToDetected(install, titles, launcherKnowsIt: false) is { } game) found.Add(game);
+        }
+        return found;
+    }
+
+    /// <summary>Unreal Engine, its plugins and tools share the Epic folders: they are not games.</summary>
+    internal static bool IsEpicTool(EpicInstall install) =>
+        string.Equals(install.Namespace, "ue", StringComparison.OrdinalIgnoreCase)
+        || install.AppName.StartsWith("UE_", StringComparison.OrdinalIgnoreCase)
+        || install.AppName.StartsWith("QuixelBridge", StringComparison.OrdinalIgnoreCase);
+
+    private static DetectedGame? ToDetected(EpicInstall install, IReadOnlyDictionary<string, string> titles, bool launcherKnowsIt)
+    {
+        if (IsEpicTool(install) || !Directory.Exists(install.Dir)) return null;
+        var exe = install.LaunchExecutable != null ? Path.Combine(install.Dir, install.LaunchExecutable) : null;
+        if (exe != null && !File.Exists(exe)) exe = null;
+        // a game the new launcher does not know (left by the classic one) can only be started from its exe
+        if (!launcherKnowsIt && exe == null) return null;
+        string? title = install.Title;
+        if (title == null && install.ItemId != null) titles.TryGetValue(install.ItemId, out title);
+        return new DetectedGame
+        {
+            Name = NameCleaner.CleanOfficialName(title ?? NameCleaner.CleanFileName(Path.GetFileName(install.Dir))),
+            Store = GameStore.Epic,
+            LaunchTarget = launcherKnowsIt ? EpicLauncher.LaunchUri(install.Namespace, install.ItemId, install.AppName) : exe!,
+            WorkingDirectory = launcherKnowsIt ? null : Path.GetDirectoryName(exe),
+            InstallDir = install.Dir,
+            Executable = exe,
+            StoreId = install.AppName,
+        };
+    }
+
+    private static IEnumerable<DetectedGame> ScanEpicLegacy()
+    {
+        var dir = EpicLauncher.LegacyManifests;
         if (!Directory.Exists(dir)) yield break;
         foreach (var file in Directory.EnumerateFiles(dir, "*.item"))
         {
@@ -347,7 +398,10 @@ public static partial class StoreScanner
         var exe = Path.GetFileNameWithoutExtension(target);
         if (EmulatorNames.Contains(exe, StringComparer.OrdinalIgnoreCase) || NameCleaner.FindRomInArguments(g.Arguments) != null) return GameStore.Emulator;
         if (g.SourceKind == GameSourceKind.Shortcut && string.IsNullOrWhiteSpace(g.TargetPath)) return GameStore.Xbox; // advertised (Store) shortcut
-        return LaunchHelper.IsUri(t) ? GameStore.Other : GameStore.Local;
+        if (LaunchHelper.IsUri(t)) return GameStore.Other;
+        // installed by Epic (its ".egstore" folder), even outside the Epic folders
+        if (target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && EpicLauncher.FromGameFolder(target) != null) return GameStore.Epic;
+        return GameStore.Local;
     }
 
     /// <summary>
@@ -356,7 +410,10 @@ public static partial class StoreScanner
     /// </summary>
     public static bool CorrectStore(Game g)
     {
-        if (g.Store != GameStore.Unknown && !(g.Store == GameStore.Steam && !LaunchesThroughSteam(g))) return false;
+        // a game imported from its exe that Epic installed (".egstore"): Epic, not "installed games"
+        var epicCopy = g.Store == GameStore.Local && !LaunchHelper.IsUri(g.LaunchTarget ?? "")
+                       && EpicLauncher.FromGameFolder(g.TargetPath ?? g.LaunchTarget) != null;
+        if (g.Store != GameStore.Unknown && !(g.Store == GameStore.Steam && !LaunchesThroughSteam(g)) && !epicCopy) return false;
         var store = Detect(g);
         if (store == g.Store) return false;
         if (g.Store != GameStore.Unknown) Log.Info($"Platform of '{g.Name}' corrected: {g.Store} -> {store}");
