@@ -51,7 +51,7 @@ public partial class ConsoleShellViewModel : ObservableObject
             new() { Label = "Thèmes", Glyph = "", Description = "Changer l'interface d'Arcadia", Command = main.OpenThemesCommand },
             new() { Label = "Détecter les jeux installés", Glyph = "", Description = "Steam, Epic, GOG, Ubisoft, Xbox", Command = main.ScanPcCommand },
             new() { Label = "Ajouter des jeux", Glyph = "", Description = "Raccourcis ou exécutables", Command = main.AddGamesCommand },
-            new() { Label = "Importer un dossier", Glyph = "", Description = "Tous les jeux d'un dossier", Command = main.ImportFolderCommand },
+            new() { Label = "Chercher dans un dossier", Glyph = "", Description = "Trouve les jeux, ignore les logiciels", Command = main.ImportFolderCommand },
             new() { Label = "Au hasard", Glyph = "", Description = "Je ne sais pas à quoi jouer", Command = main.OpenRouletteCommand },
             new() { Label = "Mode TV", Glyph = "", Description = "Plein écran pour la manette", Command = main.EnterTvModeCommand },
             new() { Label = "Interface classique", Glyph = "", Description = "Bibliothèque, statistiques, collections", Command = OpenClassicCommand },

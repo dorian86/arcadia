@@ -87,7 +87,7 @@
                                 <MenuItem Header="Ajouter des fichiers…" Command="{Binding AddGamesCommand}" InputGestureText="Ctrl+O">
                                     <MenuItem.Icon><TextBlock Text="&#xE8E5;" Style="{StaticResource Glyph}" FontSize="13"/></MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="Importer un dossier…" Command="{Binding ImportFolderCommand}">
+                                <MenuItem Header="Chercher dans un dossier…" Command="{Binding ImportFolderCommand}">
                                     <MenuItem.Icon><TextBlock Text="&#xE8B7;" Style="{StaticResource Glyph}" FontSize="13"/></MenuItem.Icon>
                                 </MenuItem>
                             </ContextMenu>

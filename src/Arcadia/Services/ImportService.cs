@@ -140,7 +140,7 @@ public sealed partial class ImportService
             var game = new Game
             {
                 Name = d.Name,
-                NameHints = new List<string> { d.Name },
+                NameHints = d.Hints is { Count: > 0 } ? d.Hints.ToList() : new List<string> { d.Name },
                 SourceKind = isExe ? GameSourceKind.Executable : GameSourceKind.InternetShortcut,
                 SourcePath = d.Executable ?? d.LaunchTarget,
                 LaunchTarget = d.LaunchTarget,
@@ -427,14 +427,14 @@ public sealed partial class ImportService
         catch { return path.Trim().ToLowerInvariant(); }
     }
 
-    private static bool IsJunkShortcut(string file, string? target)
+    internal static bool IsJunkShortcut(string file, string? target)
     {
         var name = Path.GetFileNameWithoutExtension(file);
         if (JunkShortcutName().IsMatch(name)) return true;
         return target != null && target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && IsJunkExe(target);
     }
 
-    private static bool IsJunkExe(string exe) => JunkExeName().IsMatch(Path.GetFileNameWithoutExtension(exe));
+    internal static bool IsJunkExe(string exe) => JunkExeName().IsMatch(Path.GetFileNameWithoutExtension(exe));
 
     [GeneratedRegex(@"uninstal|désinstal|desinstal|readme|lisez|manual|manuel|website|site web|support|help|aide|license|licence|eula|changelog|patch notes", RegexOptions.IgnoreCase)]
     private static partial Regex JunkShortcutName();

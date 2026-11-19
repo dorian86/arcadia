@@ -21,6 +21,17 @@ public sealed class DetectedGame
     public int? SteamAppId { get; init; }
     public string? StoreId { get; init; }
 
+    // ---- set by the folder search (GameFolderScanner) ----
+    /// <summary>Other names to try for the online identification.</summary>
+    public List<string>? Hints { get; init; }
+    /// <summary>Engine or SDK that gave the game away ("Unity", "Unreal Engine", "Steam"…), or "Raccourci".</summary>
+    public string? Note { get; init; }
+    /// <summary>Probably a game, but not sure: proposed unchecked.</summary>
+    public bool Uncertain { get; init; }
+    public double Score { get; init; }
+    /// <summary>A .lnk / .url found in the folder: imported like a dropped shortcut.</summary>
+    public string? ShortcutFile { get; init; }
+
     /// <summary>Stable key used to remember ignored detections.</summary>
     public string Key => $"{Store}:{StoreId ?? SteamAppId?.ToString() ?? LaunchTarget}".ToLowerInvariant();
 }
@@ -300,7 +311,7 @@ public static partial class StoreScanner
     // Platform detection for games imported from files
     // ------------------------------------------------------------------------------------
 
-    private static readonly string[] EmulatorNames =
+    internal static readonly string[] EmulatorNames =
     {
         "yuzu", "ryujinx", "cemu", "dolphin", "pcsx2", "pcsx2-qt", "rpcs3", "retroarch", "citra", "citra-qt", "duckstation",
         "ppsspp", "ppssppwindows64", "project64", "xenia", "xenia_canary", "mgba", "melonds", "snes9x", "snes9x-x64", "desmume",

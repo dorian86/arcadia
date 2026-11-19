@@ -129,7 +129,7 @@
                 <TextBlock Text="D'autres jeux ? Raccourcis du bureau, .exe, jeux d'émulateurs…" FontSize="13.5" Foreground="{StaticResource TextPrimary}" Margin="0,26,0,10"/>
                 <StackPanel Orientation="Horizontal">
                     <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8E5;" Content="Ajouter des fichiers…" Command="{Binding Main.AddGamesCommand}"/>
-                    <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8B7;" Content="Importer un dossier…" Command="{Binding Main.ImportFolderCommand}" Margin="10,0,0,0"/>
+                    <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8B7;" Content="Chercher dans un dossier…" Command="{Binding Main.ImportFolderCommand}" Margin="10,0,0,0"/>
                     <TextBlock Text="ou glisse-les dans la fenêtre d'Arcadia" FontSize="12.5" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="16,0,0,0"/>
                 </StackPanel>
             </StackPanel>

@@ -37,7 +37,9 @@ Désinstaller : *Paramètres Windows → Applications → Arcadia → Désinstal
 - Lecture seule des manifestes et du registre ; fenêtre de choix avec cases à cocher ; les jeux déjà présents sont signalés.
 - Au démarrage, Arcadia signale les **nouveaux jeux installés** (désactivable). Les jeux décochés ne sont plus reproposés.
 
-**Import manuel** : `.exe`, `.lnk`, `.url` (`steam://`, `uplay://`…), plusieurs fichiers, dossiers entiers, glisser-déposer, raccourcis Xbox/Store « publiés », doublons ignorés.
+**Import manuel** : `.exe`, `.lnk`, `.url` (`steam://`, `uplay://`…), plusieurs fichiers, glisser-déposer, raccourcis Xbox/Store « publiés », doublons ignorés.
+
+**Recherche dans un dossier** (*Chercher dans un dossier…*, ou glisser un dossier dans la fenêtre) : `GameFolderScanner` parcourt les sous-dossiers (8 niveaux, en sautant redistribuables, anti-triche, `Engine`, `steamapps`…) et note chaque `.exe` : moteur reconnu (`<exe>_Data` Unity, `-Shipping` / `Engine` Unreal, `data.win` GameMaker, `<exe>.pck` Godot, `renpy`, RPG Maker, FNA/MonoGame, LÖVE), DLL Steam / GOG / Epic et de jeu (Bink, FMOD, PhysX, DLSS…), archives de jeu, DLL DirectX / OpenGL / Vulkan importées (lues dans l'en-tête PE, sans lancer le fichier), nom du dossier ; en négatif : programme console, éditeur de logiciels, Electron, Qt, description de logiciel. Installeurs, outils, launchers et émulateurs sont exclus par leur nom ou leur description. Un seul `.exe` est gardé par jeu (le 64 bits, le plus haut placé). Score ≥ 5 : proposé coché ; 3 à 5 : « Peut-être des jeux », décoché. Les raccourcis du dossier sont proposés aussi (sauf ceux qui mènent à un logiciel).
 
 **Reconnaissance des noms** : `GTA5.exe - Raccourci` → *Grand Theft Auto V*, nettoyage des versions / builds / tags (`v1.7`, `-P2P`, `[game3rb]`, `Win64-Shipping`…), dossier du jeu, nom de produit, ROM des émulateurs. Un raccourci renommé par vous fait foi.
 

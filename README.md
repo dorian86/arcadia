@@ -25,6 +25,7 @@ Un seul fichier, rien à installer à côté.
 Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, des émulateurs et un dossier plein de raccourcis sur le bureau ? Arcadia les rassemble au même endroit :
 
 - 🔍 **Détection automatique** des jeux installés : Steam, Epic Games, GOG, Ubisoft Connect et Xbox / Game Pass. Pour le reste, glissez simplement vos raccourcis ou vos `.exe` dans la fenêtre.
+- 📂 **Recherche dans un dossier** : donnez-lui votre dossier « Jeux », même en désordre. Arcadia trouve le bon `.exe` de chaque jeu (Unity, Unreal, GameMaker, Godot, Ren'Py…) et laisse de côté les logiciels, les installeurs et les outils.
 - 🖼️ **Jaquettes, illustrations et logos** trouvés tout seuls, avec le vrai nom de chaque jeu, même à partir d'un raccourci nommé `GTA5.exe - Raccourci`.
 - ⏱️ **Temps de jeu**, y compris pour les jeux Steam et Epic, et reprise de votre historique Steam.
 - 📰 **Actualités** de chaque jeu dans sa fiche : les dernières annonces officielles (mises à jour, événements).

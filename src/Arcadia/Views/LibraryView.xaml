@@ -90,7 +90,7 @@
                         Visibility="{Binding HasGames, Converter={StaticResource InvBoolToVis}}">
                 <Button Style="{StaticResource PrimaryButton}" c:Ui.Glyph="&#xE721;" Content="Détecter mes jeux" Command="{Binding ScanPcCommand}"/>
                 <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8E5;" Content="Ajouter des fichiers" Margin="10,0,0,0" Command="{Binding AddGamesCommand}"/>
-                <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8B7;" Content="Importer un dossier" Margin="10,0,0,0"
+                <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8B7;" Content="Chercher dans un dossier" Margin="10,0,0,0"
                         Command="{Binding ImportFolderCommand}"/>
             </StackPanel>
             <Button Style="{StaticResource SecondaryButton}" Content="Effacer la recherche" HorizontalAlignment="Center" Margin="0,22,0,0"

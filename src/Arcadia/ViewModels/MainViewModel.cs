@@ -1005,18 +1005,21 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task ImportFolder()
+    private void ImportFolder()
     {
         var dlg = new OpenFolderDialog
         {
-            Title = "Importer un dossier de jeux (raccourcis et exécutables)",
+            Title = "Choisir le dossier où chercher des jeux (sous-dossiers compris)",
             InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
         };
-        if (dlg.ShowDialog() == true) await ImportPathsAsync(new[] { dlg.FolderName });
+        if (dlg.ShowDialog() == true) SearchFolders(new[] { dlg.FolderName });
     }
 
+    /// <summary>Opens the folder search: finds the games in the folders and lets the user pick them.</summary>
+    public void SearchFolders(IEnumerable<string> folders) => Dialogs.Add(new ScanViewModel(this, folders));
+
     [RelayCommand]
-    private void ScanPc() => Dialogs.Add(new ScanViewModel(this, null));
+    private void ScanPc() => Dialogs.Add(new ScanViewModel(this, (List<DetectedGame>?)null));
 
     private async Task AutoDetectAsync()
     {
@@ -1038,6 +1041,16 @@ public partial class MainViewModel : ObservableObject
 
     public async Task ImportPathsAsync(IEnumerable<string> paths)
     {
+        // a dropped folder is searched (games only), files are added as they are
+        var list = paths.ToList();
+        var folders = list.Where(Directory.Exists).ToList();
+        if (folders.Count > 0)
+        {
+            SearchFolders(folders);
+            list = list.Except(folders).ToList();
+            if (list.Count == 0) return;
+        }
+        paths = list;
         IsImporting = true;
         try
         {

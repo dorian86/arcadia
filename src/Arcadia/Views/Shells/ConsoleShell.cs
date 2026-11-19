@@ -221,7 +221,7 @@ public abstract class ConsoleShell : UserControl
         }
         Add("Détecter les jeux installés…", "", Main.ScanPcCommand);
         Add("Ajouter des fichiers…", "", Main.AddGamesCommand);
-        Add("Importer un dossier…", "", Main.ImportFolderCommand);
+        Add("Chercher dans un dossier…", "", Main.ImportFolderCommand);
         menu.IsOpen = true;
     }
 }

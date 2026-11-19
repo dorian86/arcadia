@@ -17,15 +17,28 @@ public partial class ScanEntry : ObservableObject
     {
         Game = game;
         InLibrary = inLibrary;
-        _isSelected = !inLibrary;
+        _isSelected = !inLibrary && !game.Uncertain;
     }
 
     public DetectedGame Game { get; }
     public bool InLibrary { get; }
     public bool CanSelect => !InLibrary;
     public string Name => Game.Name;
-    public string Detail => Game.InstallDir ?? Game.LaunchTarget;
+    public string Detail => Game.ShortcutFile ?? Game.Executable ?? Game.InstallDir ?? Game.LaunchTarget;
+    /// <summary>What gave the game away (engine, SDK) — shown as a small badge by the folder search.</summary>
+    public string? Note => Game.Note;
+    public bool CanReveal => Game.ShortcutFile != null || Game.Executable != null;
     [ObservableProperty] private bool _isSelected;
+
+    /// <summary>Shows the file in the Explorer, to check what it is before adding it.</summary>
+    [RelayCommand]
+    private void Reveal()
+    {
+        var path = Game.ShortcutFile ?? Game.Executable;
+        if (path == null) return;
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Warn($"Could not open the Explorer: {ex.Message}"); }
+    }
 }
 
 public sealed class ScanGroup
@@ -41,12 +54,31 @@ public partial class ScanViewModel : ObservableObject
     private readonly MainViewModel _main;
     private bool _closed;
 
+    private readonly List<string>? _folders;
+    private CancellationTokenSource? _cts;
+
     public ScanViewModel(MainViewModel main, List<DetectedGame>? preloaded)
     {
         _main = main;
         if (preloaded != null) Fill(preloaded);
         else _ = ScanAsync();
     }
+
+    /// <summary>Folder search: finds the games (and only the games) inside the chosen folders.</summary>
+    public ScanViewModel(MainViewModel main, IEnumerable<string> folders)
+    {
+        _main = main;
+        _folders = folders.ToList();
+        _ = ScanAsync();
+    }
+
+    public bool IsFolderSearch => _folders != null;
+    public string Title => IsFolderSearch ? "Jeux trouvés dans le dossier" : "Jeux installés sur ce PC";
+    public string Subtitle => IsFolderSearch
+        ? string.Join(" · ", _folders!) + " — les logiciels et installeurs sont écartés, rien n'est modifié."
+        : "Steam, Epic Games, GOG, Ubisoft Connect et application Xbox — rien n'est modifié.";
+    [ObservableProperty] private string _scanningText = "Analyse de vos launchers…";
+    [ObservableProperty] private string? _scanningDetail;
 
     public ObservableCollection<ScanGroup> Groups { get; } = new();
     [ObservableProperty] private bool _isScanning;
@@ -65,15 +97,54 @@ public partial class ScanViewModel : ObservableObject
         Groups.Clear();
         try
         {
+            if (_folders != null)
+            {
+                await SearchFoldersAsync(_folders);
+                return;
+            }
             var found = await Task.Run(StoreScanner.ScanAll);
             if (_closed) return;
             Fill(found);
         }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
             Status = "La détection a échoué : " + ex.Message;
         }
         finally { IsScanning = false; }
+    }
+
+    private async Task SearchFoldersAsync(List<string> folders)
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+        ScanningText = "Recherche des jeux dans le dossier…";
+        ScanningDetail = null;
+        var progress = new Progress<string>(dir => ScanningDetail = dir);
+        var found = new List<DetectedGame>();
+        var seen = 0;
+        foreach (var folder in folders)
+        {
+            // STA: shortcuts are read through the shell
+            var result = await Sta.Run(() => GameFolderScanner.Scan(folder, progress, ct));
+            found.AddRange(result.Games);
+            seen += result.ExecutablesSeen;
+        }
+        if (_closed) return;
+
+        var entries = found.DistinctBy(d => (d.Executable ?? d.LaunchTarget).ToLowerInvariant())
+                           .Select(d => new ScanEntry(d, _main.Importer.IsInLibrary(d))).ToList();
+        foreach (var e in entries) e.PropertyChanged += (_, _) => UpdateCount();
+        var sure = entries.Where(e => !e.Game.Uncertain).OrderBy(e => e.InLibrary).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        var maybe = entries.Where(e => e.Game.Uncertain).OrderBy(e => e.InLibrary).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        if (sure.Count > 0) Groups.Add(new ScanGroup { Label = "Jeux", Glyph = "", Entries = sure });
+        if (maybe.Count > 0) Groups.Add(new ScanGroup { Label = "Peut-être des jeux — à vérifier", Glyph = "", Entries = maybe });
+        NewCount = entries.Count(e => !e.InLibrary);
+        UpdateCount();
+        Status = entries.Count == 0
+            ? seen == 0 ? "Aucun exécutable dans ce dossier." : $"{seen} exécutable(s) examiné(s), mais aucun ne ressemble à un jeu."
+            : NewCount == 0 ? "Tous les jeux de ce dossier sont déjà dans votre bibliothèque." : null;
     }
 
     private void Fill(List<DetectedGame> found)
@@ -107,6 +178,13 @@ public partial class ScanViewModel : ObservableObject
         var chosen = AllEntries.Where(e => e.IsSelected && !e.InLibrary).Select(e => e.Game).ToList();
         if (chosen.Count == 0) return;
         IsImporting = true;
+        if (IsFolderSearch)
+        {
+            try { await ImportFromFolderAsync(chosen); }
+            catch (Exception ex) { Status = "L'importation a échoué : " + ex.Message; }
+            finally { IsImporting = false; }
+            return;
+        }
         try
         {
             // remember the ones the user left unchecked so we don't propose them again
@@ -123,10 +201,29 @@ public partial class ScanViewModel : ObservableObject
         finally { IsImporting = false; }
     }
 
+    private async Task ImportFromFolderAsync(List<DetectedGame> chosen)
+    {
+        var games = await _main.Importer.ImportDetectedAsync(chosen.Where(d => d.ShortcutFile == null));
+        var shortcuts = chosen.Where(d => d.ShortcutFile != null).Select(d => d.ShortcutFile!).ToList();
+        if (shortcuts.Count > 0)
+        {
+            var report = await _main.Importer.ImportAsync(shortcuts);
+            games.AddRange(report.Added);
+        }
+        _main.IsFetchingMetadata = games.Count > 0 && _main.Settings.AutoFetchMetadata;
+        _main.Sound.Play(Sfx.Notify);
+        _main.ShowToast(games.Count == 0 ? "Ces jeux étaient déjà dans votre bibliothèque"
+                        : games.Count == 1 ? $"« {games[0].Name} » a été ajouté"
+                        : $"{games.Count} jeux ajoutés depuis le dossier", games.Count == 0 ? ToastKind.Info : ToastKind.Success);
+        Close();
+        if (games.Count > 0 && _main.Section is Section.Settings or Section.Stats) _main.Section = Section.All;
+    }
+
     [RelayCommand]
     private void Close()
     {
         _closed = true;
+        _cts?.Cancel();
         _main.CloseDialog(this);
     }
 }
