@@ -155,7 +155,11 @@ public partial class SwitchShell : ConsoleShell
         var sel = _discRow ? -1 : _onAllTile ? Home : Vm.CategoryIndex == 0 ? Vm.Index : -1;
         for (var i = 0; i < _strip.Count; i++) SetFrame(_strip[i], i == sel);
         if (_allTile?.Tag is Border allFrame) Animate(allFrame, OpacityProperty, sel == Home ? 1 : 0, 120);
-        SelectedTitle.Text = _discRow ? "" : _onAllTile ? "Tous les logiciels" : Vm.Current?.Name ?? "";
+        SelectedTitle.Inlines.Clear();
+        SelectedTitle.Inlines.Add(new System.Windows.Documents.Run(_discRow ? "" : _onAllTile ? "Tous les logiciels" : Vm.Current?.Name ?? ""));
+        // the achievements of the selected game, a little lighter next to its name
+        if (!_discRow && !_onAllTile && Vm.Current?.AchievementsShortText is { } ach)
+            SelectedTitle.Inlines.Add(new System.Windows.Documents.Run("    " + ach) { FontSize = 20, Foreground = SelectedTitle.Foreground.CloneCurrentValue() is SolidColorBrush b ? new SolidColorBrush(b.Color) { Opacity = 0.6 } : null });
 
         // keep the selected square in view
         if (sel >= 0)

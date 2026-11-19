@@ -12,7 +12,7 @@ public partial class MainViewModel
     private readonly Dictionary<Game, DateTime> _newsLoadedAt = new();
 
     /// <summary>Loaded when the page opens, then kept for an hour.</summary>
-    private async Task LoadNewsAsync(Game game)
+    public async Task LoadNewsAsync(Game game)
     {
         if (game.NewsAppId is not int appId) return;
         if (_newsLoadedAt.TryGetValue(game, out var at) && DateTime.Now - at < TimeSpan.FromHours(1)) return;

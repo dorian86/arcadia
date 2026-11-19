@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using Arcadia.Models;
 using Arcadia.Services;
 using Arcadia.ViewModels;
@@ -53,6 +54,7 @@ public partial class MainWindow : Window
         vm.MinimizeRequested += () => WindowState = WindowState.Minimized;
         vm.RestoreRequested += ShowFromBackground;
         vm.UiThemeChanged += LoadShell;
+        vm.Shell.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ConsoleShellViewModel.Sheet)) UpdateSheet(); };
         Loaded += (_, _) => LoadShell();
 
         // Gamepad: TV mode navigation, Start + Back opens the TV mode
@@ -261,6 +263,8 @@ public partial class MainWindow : Window
             _shell.DataContext = null;
         }
         _shellShown = false;
+        _vm.Shell.Sheet?.Dispose();
+        _vm.Shell.Sheet = null;
         _shell = CreateShell(_vm.CurrentTheme.Key);
         if (_shell != null)
         {
@@ -284,6 +288,7 @@ public partial class MainWindow : Window
             if (dark) b.Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0x5D, 0x66));
             else b.ClearValue(ForegroundProperty);
         }
+        ApplyNotificationStyle(show ? _vm.CurrentTheme : null);
         if (show == _shellShown) return;
         _shellShown = show;
         if (show)
@@ -298,14 +303,124 @@ public partial class MainWindow : Window
         }
     }
 
+    private Views.Shells.ShellBootScreen? _boot;
+
+    /// <summary>Startup animation of the console theme (Arcadia opened on a theme). Returns false for the default interface.</summary>
+    public bool PlayBootScreen()
+    {
+        if (!_vm.IsShellTheme) return false;
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            if (!ShellActive) return;
+            var boot = new Views.Shells.ShellBootScreen(_vm.CurrentTheme, _vm.Sound);
+            Grid.SetColumnSpan(boot, 2);
+            Panel.SetZIndex(boot, 16);
+            boot.Finished += () =>
+            {
+                RootGrid.Children.Remove(boot);
+                if (_boot == boot) _boot = null;
+                _shell?.Focus();
+            };
+            _boot = boot;
+            RootGrid.Children.Add(boot);
+        });
+        return true;
+    }
+
+    /// <summary>Any key, click or controller button skips the startup animation.</summary>
+    private bool SkipBoot()
+    {
+        if (_boot is not { IsRunning: true } boot) return false;
+        boot.Skip();
+        return true;
+    }
+
+    /// <summary>
+    /// Notifications (toasts and trophy banner) drawn like the theme on screen: square and dark at the top
+    /// on PlayStation, pill-shaped at the top right on Switch, white with a blue outline on Wii.
+    /// </summary>
+    private void ApplyNotificationStyle(Models.ConsoleTheme? theme)
+    {
+        static SolidColorBrush B(uint argb) => new(Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb));
+        var keys = new[] { "ToastBg", "ToastStroke", "ToastFg", "ToastMuted", "ToastRadius" };
+        (Brush Bg, Brush Stroke, Brush Fg, Brush Muted, double Radius, HorizontalAlignment Toasts, VerticalAlignment ToastsV, HorizontalAlignment Banner)? style =
+            theme?.Family switch
+            {
+                "ps" => (B(0xF21C1F27), B(0x33FFFFFF), Brushes.White, B(0xB3FFFFFF), 6, HorizontalAlignment.Right, VerticalAlignment.Top, HorizontalAlignment.Left),
+                "switch" when theme.IsLight => (B(0xF7FFFFFF), B(0xFFDCDCDC), B(0xFF2D2D2D), B(0xFF6E6E6E), 30, HorizontalAlignment.Right, VerticalAlignment.Top, HorizontalAlignment.Center),
+                "switch" => (B(0xF7464646), B(0x00000000), Brushes.White, B(0xFFB4B4B4), 30, HorizontalAlignment.Right, VerticalAlignment.Top, HorizontalAlignment.Center),
+                "wii" => (B(0xF7FFFFFF), B(0xFF34BEED), B(0xFF4A5560), B(0xFF7A838C), 24, HorizontalAlignment.Right, VerticalAlignment.Bottom, HorizontalAlignment.Center),
+                _ => null,
+            };
+        if (style is not { } s)
+        {
+            foreach (var k in keys) Resources.Remove(k);
+            ToastHost.VerticalAlignment = VerticalAlignment.Bottom;
+            ToastHost.Margin = new Thickness(0, 0, 28, 26);
+            TrophyBannerView.HorizontalAlignment = HorizontalAlignment.Center;
+            TrophyBannerView.Margin = new Thickness(0, 24, 0, 0);
+            TrophyBannerView.CornerRadius = new CornerRadius(18);
+            return;
+        }
+        Resources["ToastBg"] = s.Bg;
+        Resources["ToastStroke"] = s.Stroke;
+        Resources["ToastFg"] = s.Fg;
+        Resources["ToastMuted"] = s.Muted;
+        Resources["ToastRadius"] = new CornerRadius(s.Radius);
+        ToastHost.HorizontalAlignment = s.Toasts;
+        ToastHost.VerticalAlignment = s.ToastsV;
+        ToastHost.Margin = s.ToastsV == VerticalAlignment.Top ? new Thickness(0, 64, 28, 0) : new Thickness(0, 0, 28, 26);
+        TrophyBannerView.HorizontalAlignment = s.Banner;
+        TrophyBannerView.Margin = s.Banner == HorizontalAlignment.Left ? new Thickness(40, 24, 0, 0) : s.Banner == HorizontalAlignment.Right ? new Thickness(0, 64, 28, 0) : new Thickness(0, 24, 0, 0);
+        TrophyBannerView.CornerRadius = new CornerRadius(s.Radius);
+    }
+
     /// <summary>Dev check (--keys): sends a key to the current console theme.</summary>
     public void DevKey(Key key)
     {
-        if (ShellActive && _vm.Dialogs.Count == 0) _shell!.HandleKey(key);
+        if (ShellActive && _vm.Dialogs.Count == 0 && Views.Shells.ConsoleShell.MapKey(key) is { } pad) ShellPad(pad);
+    }
+
+    /// <summary>A controller button in a console theme: to its game page when open, else to the theme.</summary>
+    private void ShellPad(PadButton button)
+    {
+        if (_vm.Shell.Sheet is { } sheet) sheet.HandlePad(button);
+        else _shell!.HandlePad(button);
+    }
+
+    /// <summary>The game page of a console theme slides in over it, and fades out.</summary>
+    private void UpdateSheet()
+    {
+        var sheet = _vm.Shell.Sheet;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        if (sheet != null)
+        {
+            SheetHost.Content = new Views.Shells.ShellGameSheet { DataContext = sheet };
+            SheetHost.Visibility = Visibility.Visible;
+            var scale = new ScaleTransform(1.04, 1.04);
+            SheetHost.RenderTransformOrigin = new Point(0.5, 0.5);
+            SheetHost.RenderTransform = scale;
+            SheetHost.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260)) { EasingFunction = ease });
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1.04, 1, TimeSpan.FromMilliseconds(360)) { EasingFunction = ease });
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1.04, 1, TimeSpan.FromMilliseconds(360)) { EasingFunction = ease });
+        }
+        else if (SheetHost.Visibility == Visibility.Visible)
+        {
+            var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
+            fade.Completed += (_, _) =>
+            {
+                if (_vm.Shell.Sheet != null) return;
+                SheetHost.Visibility = Visibility.Collapsed;
+                SheetHost.Content = null;
+                _shell?.Focus();
+            };
+            SheetHost.BeginAnimation(OpacityProperty, fade);
+        }
     }
 
     private void OnPadPressed(PadButton button)
     {
+        if (SkipBoot()) return;
         if (ShellActive)
         {
             if (_vm.Dialogs.Count > 0)
@@ -313,7 +428,7 @@ public partial class MainWindow : Window
                 if (button is PadButton.B) _vm.CloseTopDialog();
                 return;
             }
-            _shell!.HandlePad(button);
+            ShellPad(button);
             return;
         }
         if (_vm.IsTvMode)
@@ -336,6 +451,7 @@ public partial class MainWindow : Window
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (SkipBoot()) { e.Handled = true; return; }
         if (e.Key == Key.F11)
         {
             e.Handled = true;
@@ -361,7 +477,11 @@ public partial class MainWindow : Window
                 return;
             }
             if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.O) { _vm.AddGamesCommand.Execute(null); e.Handled = true; return; }
-            if (Keyboard.FocusedElement is not TextBox) e.Handled = _shell!.HandleKey(e.Key);
+            if (Keyboard.FocusedElement is not TextBox && Views.Shells.ConsoleShell.MapKey(e.Key) is { } pad)
+            {
+                ShellPad(pad);
+                e.Handled = true;
+            }
             return;
         }
 
@@ -421,10 +541,11 @@ public partial class MainWindow : Window
 
     private void OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (SkipBoot()) { e.Handled = true; return; }
         if (e.ChangedButton == MouseButton.XButton1 && _vm.Dialogs.Count == 0)
         {
             // mouse "back" button = B in a console theme (closes the Wii channel screen, the Switch grid…)
-            if (ShellActive) { _shell!.HandlePad(PadButton.B); e.Handled = true; }
+            if (ShellActive) { ShellPad(PadButton.B); e.Handled = true; }
             else if (_vm.IsTvMode) { _vm.ExitTvModeCommand.Execute(null); e.Handled = true; }
             else if (_vm.DetailGame != null) { _vm.CloseDetailCommand.Execute(null); e.Handled = true; }
             else if (_vm.ShowReturnToShell) { _vm.ReturnToShellCommand.Execute(null); e.Handled = true; }

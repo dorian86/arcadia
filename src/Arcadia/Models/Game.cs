@@ -164,7 +164,7 @@ public partial class Game : ObservableObject
 
     // ---- Achievements (official list from Steam, ticked by the player) ----------------
     /// <summary>null = not looked up yet; empty = looked up, the game has none (or is not on Steam).</summary>
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasAchievements), nameof(AchievementsUnlocked), nameof(AchievementsProgressText), nameof(AchievementsRatio))]
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasAchievements), nameof(AchievementsUnlocked), nameof(AchievementsProgressText), nameof(AchievementsRatio), nameof(AchievementsShortText))]
     private List<Achievement>? _achievements;
 
     /// <summary>Steam game the list comes from (may be found by name for games identified elsewhere).</summary>
@@ -379,12 +379,16 @@ public partial class Game : ObservableObject
         ? $"{AchievementsUnlocked} / {Achievements!.Count}  ·  {Math.Round(AchievementsRatio * 100)} %"
         : "";
 
+    /// <summary>"12 / 40 succès" for the console themes, null when the game has no list.</summary>
+    [JsonIgnore] public string? AchievementsShortText => HasAchievements ? $"{AchievementsUnlocked} / {Achievements!.Count} succès" : null;
+
     /// <summary>Called after an achievement was ticked: updates the progress (and saves the library).</summary>
     public void RefreshAchievementProgress()
     {
         OnPropertyChanged(nameof(AchievementsUnlocked));
         OnPropertyChanged(nameof(AchievementsRatio));
         OnPropertyChanged(nameof(AchievementsProgressText));
+        OnPropertyChanged(nameof(AchievementsShortText));
     }
     [JsonIgnore] public string StatusLabel => StatusInfo.Label(Status);
     [JsonIgnore] public string StatusGlyph => StatusInfo.Glyph(Status);

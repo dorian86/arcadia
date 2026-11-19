@@ -1,0 +1,486 @@
+<UserControl x:Class="Arcadia.Views.Shells.ShellGameSheet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Arcadia.Controls"
+             xmlns:vm="clr-namespace:Arcadia.ViewModels"
+             FontFamily="Segoe UI" TextOptions.TextFormattingMode="Ideal">
+    <UserControl.Resources>
+
+        <!-- ============================================================================= -->
+        <!-- PlayStation family: the game in full screen, buttons on the left, activity cards -->
+        <!-- ============================================================================= -->
+        <DataTemplate x:Key="PsSheet" DataType="{x:Type vm:GameSheetViewModel}">
+            <Grid Background="#05060A" ClipToBounds="True">
+                <Border c:ImageLoader.Source="{Binding Game.WideArtPath}" c:ImageLoader.DecodeWidth="1920" c:ImageLoader.AlignY="Top" RenderOptions.BitmapScalingMode="Linear"/>
+                <Rectangle>
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#F205060A" Offset="0"/>
+                            <GradientStop Color="#9905060A" Offset="0.5"/>
+                            <GradientStop Color="#2005060A" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <Rectangle>
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#0005060A" Offset="0.45"/>
+                            <GradientStop Color="#F205060A" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <c:DesignScaler>
+                    <Grid>
+                        <!-- title -->
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="96,96,0,0" MaxWidth="860">
+                            <Image MaxWidth="560" MaxHeight="190" HorizontalAlignment="Left" Stretch="Uniform"
+                                   c:ImageLoader.Source="{Binding Game.LogoFullPath}" c:ImageLoader.DecodeWidth="700"
+                                   Visibility="{Binding Game.HasLogo, Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="{Binding Game.Name}" FontSize="58" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" MaxHeight="150"
+                                       TextTrimming="WordEllipsis" Visibility="{Binding Game.HasLogo, Converter={StaticResource InvBoolToVis}}"/>
+                            <TextBlock Text="{Binding Meta}" FontSize="19" Foreground="#CCFFFFFF" Margin="2,18,0,0"/>
+                            <!-- actions -->
+                            <ItemsControl ItemsSource="{Binding Actions}" Margin="0,32,0,0" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:SheetAction}">
+                                        <Button Style="{StaticResource BareButton}" Margin="0,0,16,0" Command="{Binding InvokeCommand}" ToolTip="{Binding Label}">
+                                            <Grid>
+                                                <Border x:Name="Ring" CornerRadius="38" Margin="-6" BorderThickness="3" BorderBrush="White" Opacity="0"/>
+                                                <Border x:Name="Body" CornerRadius="33" Width="66" Height="66" Background="#40FFFFFF">
+                                                    <Grid>
+                                                        <TextBlock x:Name="Icon" Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="24" Foreground="White"/>
+                                                        <TextBlock x:Name="Text" Text="{Binding Label}" FontSize="26" FontWeight="SemiBold" Foreground="#101216"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+                                        </Button>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsPrimary}" Value="True">
+                                                <Setter TargetName="Body" Property="Width" Value="240"/>
+                                                <Setter TargetName="Body" Property="Background" Value="White"/>
+                                                <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
+                                                <Setter TargetName="Text" Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                <Setter TargetName="Ring" Property="Opacity" Value="1"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <!-- activities -->
+                        <StackPanel VerticalAlignment="Bottom" Margin="96,0,60,70">
+                            <TextBlock Text="Activités" FontSize="22" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,14"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="250" Height="150" CornerRadius="16" Background="#66000000" BorderBrush="#26FFFFFF" BorderThickness="1" Padding="22,18" Margin="0,0,16,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Temps de jeu" FontSize="15" Foreground="#B3FFFFFF"/>
+                                        <TextBlock Text="{Binding PlayTime}" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,4,0,0"/>
+                                        <TextBlock Text="Dernière session" FontSize="15" Foreground="#B3FFFFFF" Margin="0,12,0,0"/>
+                                        <TextBlock Text="{Binding LastPlayed}" FontSize="18" Foreground="White" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Width="330" Height="150" CornerRadius="16" Background="#66000000" BorderBrush="#26FFFFFF" BorderThickness="1" Padding="22,18" Margin="0,0,16,0"
+                                        Visibility="{Binding HasAchievements, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel>
+                                        <Grid>
+                                            <TextBlock Text="Succès" FontSize="15" Foreground="#B3FFFFFF"/>
+                                            <TextBlock Text="{Binding AchievementsPercent}" FontSize="15" Foreground="#B3FFFFFF" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                        <TextBlock Text="{Binding AchievementsText}" FontSize="24" FontWeight="SemiBold" Foreground="White" Margin="0,4,0,0"/>
+                                        <Grid Height="5" Margin="0,8,0,0">
+                                            <Border CornerRadius="2.5" Background="#33FFFFFF"/>
+                                            <Border CornerRadius="2.5" Background="White" RenderTransformOrigin="0,0.5">
+                                                <Border.RenderTransform><ScaleTransform ScaleX="{Binding AchievementsRatio}"/></Border.RenderTransform>
+                                            </Border>
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{Binding RecentAchievements}" Margin="0,12,0,0" Focusable="False">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Width="36" Height="36" CornerRadius="6" Margin="0,0,8,0" Background="#33FFFFFF" ToolTip="{Binding Name}"
+                                                            c:ImageLoader.Source="{Binding IconUrl}" c:ImageLoader.DecodeWidth="48"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding News}" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource BareButton}" Margin="0,0,16,0" ToolTip="Lire l'annonce"
+                                                    Command="{Binding DataContext.OpenNewsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                                <Border Width="262" Height="150" CornerRadius="16" ClipToBounds="True" BorderThickness="2" Background="#66000000">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="BorderBrush" Value="#26FFFFFF"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                                    <Setter Property="BorderBrush" Value="White"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Grid>
+                                                        <Border CornerRadius="15" c:ImageLoader.Source="{Binding ImageUrl}" c:ImageLoader.DecodeWidth="320" Opacity="0.55"/>
+                                                        <Border CornerRadius="15">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#20000000" Offset="0"/>
+                                                                    <GradientStop Color="#E6000000" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <StackPanel VerticalAlignment="Bottom" Margin="18,0,18,16">
+                                                            <TextBlock Text="{Binding DateText}" FontSize="13" Foreground="#B3FFFFFF"/>
+                                                            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap"
+                                                                       TextTrimming="CharacterEllipsis" MaxHeight="44" Margin="0,3,0,0"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- hints -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,60,24">
+                            <Button Style="{StaticResource HintButton}" Command="{Binding CloseCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="26" Height="26" CornerRadius="13" BorderBrush="#CCFFFFFF" BorderThickness="1.5">
+                                        <TextBlock Text="B" FontSize="12" FontWeight="Bold" Foreground="#CCFFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Retour" FontSize="17" Foreground="#CCFFFFFF" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </c:DesignScaler>
+            </Grid>
+        </DataTemplate>
+
+        <!-- ============================================================================= -->
+        <!-- Switch family: square tile on the left, title and pill buttons, info panels   -->
+        <!-- ============================================================================= -->
+        <DataTemplate x:Key="SwitchSheet" DataType="{x:Type vm:GameSheetViewModel}">
+            <Grid x:Name="Root" Background="#2D2D2D">
+                <c:DesignScaler>
+                    <Grid>
+                        <Grid Margin="96,90,96,0" VerticalAlignment="Top">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="380"/>
+                                <ColumnDefinition Width="56"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="380" Height="380" CornerRadius="4" Background="{Binding Game.Name, Converter={StaticResource NameToBrush}}">
+                                <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.35"/></Border.Effect>
+                                <Border CornerRadius="4" c:ImageLoader.Source="{Binding Game.SquareTilePath}" c:ImageLoader.DecodeWidth="420"/>
+                            </Border>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                                <TextBlock x:Name="Title" Text="{Binding Game.Name}" FontSize="42" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap"
+                                           MaxHeight="112" TextTrimming="WordEllipsis"/>
+                                <TextBlock x:Name="Meta" Text="{Binding Meta}" FontSize="18" Foreground="#A0A0A0" Margin="0,10,0,0"/>
+                                <ItemsControl ItemsSource="{Binding Actions}" Margin="0,30,0,0" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:SheetAction}">
+                                            <Button Style="{StaticResource BareButton}" Margin="0,0,14,0" Command="{Binding InvokeCommand}">
+                                                <Grid>
+                                                    <Border x:Name="Ring" CornerRadius="32" Margin="-5" BorderThickness="4" BorderBrush="#00C3E3" Opacity="0"/>
+                                                    <Border x:Name="Body" CornerRadius="28" Height="56" Padding="26,0" Background="#464646">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock x:Name="Icon" Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="18" Foreground="White"/>
+                                                            <TextBlock x:Name="Text" Text="{Binding Label}" FontSize="19" Foreground="White" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Grid>
+                                            </Button>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsPrimary}" Value="True">
+                                                    <Setter TargetName="Body" Property="Background" Value="#00C3E3"/>
+                                                    <Setter TargetName="Text" Property="FontWeight" Value="SemiBold"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="Ring" Property="Opacity" Value="1"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- info panels -->
+                                <UniformGrid Columns="3" Margin="0,36,-14,0">
+                                    <Border x:Name="P1" CornerRadius="12" Background="#3A3A3A" Padding="20,16" Margin="0,0,14,0">
+                                        <StackPanel>
+                                            <TextBlock x:Name="L1" Text="Temps de jeu" FontSize="15" Foreground="#A0A0A0"/>
+                                            <TextBlock x:Name="V1" Text="{Binding PlayTime}" FontSize="23" FontWeight="SemiBold" Foreground="White" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border x:Name="P2" CornerRadius="12" Background="#3A3A3A" Padding="20,16" Margin="0,0,14,0">
+                                        <StackPanel>
+                                            <TextBlock x:Name="L2" Text="Dernière session" FontSize="15" Foreground="#A0A0A0"/>
+                                            <TextBlock x:Name="V2" Text="{Binding LastPlayed}" FontSize="23" FontWeight="SemiBold" Foreground="White" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border x:Name="P3" CornerRadius="12" Background="#3A3A3A" Padding="20,16" Margin="0,0,14,0">
+                                        <StackPanel>
+                                            <TextBlock x:Name="L3" Text="Succès" FontSize="15" Foreground="#A0A0A0"/>
+                                            <TextBlock x:Name="V3" FontSize="23" FontWeight="SemiBold" Foreground="White" Margin="0,4,0,0" TextTrimming="CharacterEllipsis">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="{Binding AchievementsText}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasAchievements}" Value="False">
+                                                                <Setter Property="Text" Value="—"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <Grid Height="4" Margin="0,8,0,0" Visibility="{Binding HasAchievements, Converter={StaticResource BoolToVis}}">
+                                                <Border x:Name="Track" CornerRadius="2" Background="#555555"/>
+                                                <Border CornerRadius="2" Background="#00C3E3" RenderTransformOrigin="0,0.5">
+                                                    <Border.RenderTransform><ScaleTransform ScaleX="{Binding AchievementsRatio}"/></Border.RenderTransform>
+                                                </Border>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+                                <!-- news -->
+                                <StackPanel Margin="0,28,0,0" Visibility="{Binding HasNews, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock x:Name="NewsTitle" Text="Actualités" FontSize="17" Foreground="#A0A0A0" Margin="0,0,0,8"/>
+                                    <ItemsControl ItemsSource="{Binding News}" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource BareButton}" Command="{Binding DataContext.OpenNewsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" HorizontalAlignment="Stretch" Margin="0,0,0,2">
+                                                    <Grid Margin="0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Title}" FontSize="18" TextTrimming="CharacterEllipsis">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="{Binding DataContext.TextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                                    <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#00A6D6"/>
+                                                                            <Setter Property="TextDecorations" Value="Underline"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <TextBlock Grid.Column="1" Text="{Binding DateText}" FontSize="15" Foreground="#888888" Margin="20,0,0,0"/>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- bottom bar -->
+                        <Border x:Name="Bar" VerticalAlignment="Bottom" Height="72" Margin="40,0" BorderBrush="#555555" BorderThickness="0,1,0,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,40,0">
+                                <Button Style="{StaticResource HintButton}" Command="{Binding CloseCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border x:Name="HintB" Width="28" Height="28" CornerRadius="14" Background="White">
+                                            <TextBlock x:Name="HintBText" Text="B" FontSize="13" FontWeight="Bold" Foreground="#2D2D2D" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock x:Name="HintLabel" Text="Retour" FontSize="18" Foreground="White" VerticalAlignment="Center" Margin="8,0,28,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource HintButton}" Command="{Binding ActivateSelectedCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border x:Name="HintA" Width="28" Height="28" CornerRadius="14" Background="White">
+                                            <TextBlock x:Name="HintAText" Text="A" FontSize="13" FontWeight="Bold" Foreground="#2D2D2D" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock x:Name="HintALabel" Text="OK" FontSize="18" Foreground="White" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </c:DesignScaler>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsLight}" Value="True">
+                    <Setter TargetName="Root" Property="Background" Value="#EBEBEB"/>
+                    <Setter TargetName="Title" Property="Foreground" Value="#2D2D2D"/>
+                    <Setter TargetName="Meta" Property="Foreground" Value="#6E6E6E"/>
+                    <Setter TargetName="P1" Property="Background" Value="White"/>
+                    <Setter TargetName="P2" Property="Background" Value="White"/>
+                    <Setter TargetName="P3" Property="Background" Value="White"/>
+                    <Setter TargetName="V1" Property="Foreground" Value="#2D2D2D"/>
+                    <Setter TargetName="V2" Property="Foreground" Value="#2D2D2D"/>
+                    <Setter TargetName="V3" Property="Foreground" Value="#2D2D2D"/>
+                    <Setter TargetName="Track" Property="Background" Value="#DDDDDD"/>
+                    <Setter TargetName="NewsTitle" Property="Foreground" Value="#2D2D2D"/>
+                    <Setter TargetName="Bar" Property="BorderBrush" Value="#CDCDCD"/>
+                    <Setter TargetName="HintB" Property="Background" Value="#2D2D2D"/>
+                    <Setter TargetName="HintA" Property="Background" Value="#2D2D2D"/>
+                    <Setter TargetName="HintBText" Property="Foreground" Value="White"/>
+                    <Setter TargetName="HintAText" Property="Foreground" Value="White"/>
+                    <Setter TargetName="HintLabel" Property="Foreground" Value="#2D2D2D"/>
+                    <Setter TargetName="HintALabel" Property="Foreground" Value="#2D2D2D"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- ============================================================================= -->
+        <!-- Wii family: the channel screen in the middle, big round buttons, news ticker   -->
+        <!-- ============================================================================= -->
+        <DataTemplate x:Key="WiiSheet" DataType="{x:Type vm:GameSheetViewModel}">
+            <Grid Background="#F4F6F8">
+                <Rectangle Fill="{StaticResource ScanlineBrush}" Opacity="0.6"/>
+                <c:DesignScaler>
+                    <Grid>
+                        <!-- channel screen -->
+                        <Border Width="1240" Height="520" Margin="0,56,0,0" VerticalAlignment="Top" CornerRadius="44" BorderThickness="4" BorderBrush="#D3DAE1"
+                                Background="{Binding Game.Name, Converter={StaticResource NameToBrush}}" ClipToBounds="True">
+                            <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="6" Opacity="0.18"/></Border.Effect>
+                            <Grid>
+                                <Border CornerRadius="40" c:ImageLoader.Source="{Binding Game.WideArtPath}" c:ImageLoader.DecodeWidth="1300"/>
+                                <Border CornerRadius="40">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#00000000" Offset="0.5"/>
+                                            <GradientStop Color="#B3000000" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <StackPanel VerticalAlignment="Bottom" Margin="56,0,56,34">
+                                    <Image MaxWidth="460" MaxHeight="150" HorizontalAlignment="Left" Stretch="Uniform"
+                                           c:ImageLoader.Source="{Binding Game.LogoFullPath}" c:ImageLoader.DecodeWidth="600"
+                                           Visibility="{Binding Game.HasLogo, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBlock Text="{Binding Game.Name}" FontSize="44" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis"
+                                               Visibility="{Binding Game.HasLogo, Converter={StaticResource InvBoolToVis}}"/>
+                                    <TextBlock FontSize="19" Foreground="#E6FFFFFF" Margin="2,10,0,0">
+                                        <Run Text="{Binding PlayTime, Mode=OneWay}"/>
+                                        <Run Text="   ·   dernière partie :"/>
+                                        <Run Text="{Binding LastPlayed, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding AchievementsText}" FontSize="19" Foreground="#E6FFFFFF" Margin="2,4,0,0"
+                                               Visibility="{Binding HasAchievements, Converter={StaticResource BoolToVis}}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- round buttons -->
+                        <ItemsControl ItemsSource="{Binding Actions}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,612,0,0" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:SheetAction}">
+                                    <Button Style="{StaticResource BareButton}" Margin="14,0" Command="{Binding InvokeCommand}">
+                                        <Grid>
+                                            <Border x:Name="Glow" CornerRadius="44" Margin="-7" BorderThickness="5" BorderBrush="#34BEED" Opacity="0">
+                                                <Border.Effect><BlurEffect Radius="6"/></Border.Effect>
+                                            </Border>
+                                            <Border x:Name="Body" CornerRadius="40" Height="80" Width="250" Background="White" BorderBrush="#C9D1D9" BorderThickness="3">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="20" Foreground="#34BEED"/>
+                                                    <TextBlock x:Name="Text" Text="{Binding Label}" FontSize="21" Foreground="#4A5560" Margin="12,0,0,0" VerticalAlignment="Center"
+                                                               MaxWidth="170" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsPrimary}" Value="True">
+                                            <Setter TargetName="Body" Property="BorderBrush" Value="#34BEED"/>
+                                            <Setter TargetName="Text" Property="FontWeight" Value="SemiBold"/>
+                                            <Setter TargetName="Text" Property="Text" Value="Démarrer"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter TargetName="Glow" Property="Opacity" Value="1"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- news ticker -->
+                        <Border VerticalAlignment="Bottom" Height="64" Margin="0,0,0,40" Background="#E6FFFFFF" BorderBrush="#D3DAE1" BorderThickness="0,2"
+                                Visibility="{Binding HasNews, Converter={StaticResource BoolToVis}}" ClipToBounds="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#34BEED" Padding="26,0">
+                                    <TextBlock Text="Actualités" FontSize="19" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </Border>
+                                <Canvas Grid.Column="1" ClipToBounds="True">
+                                    <StackPanel x:Name="Ticker" Orientation="Horizontal" Canvas.Top="18" Tag="ticker">
+                                        <ItemsControl ItemsSource="{Binding News}" Focusable="False">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Style="{StaticResource BareButton}" Margin="0,0,90,0"
+                                                            Command="{Binding DataContext.OpenNewsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                                        <TextBlock FontSize="19" Foreground="#4A5560">
+                                                            <Run Text="{Binding DateText, Mode=OneWay}" Foreground="#34BEED"/>
+                                                            <Run Text="  "/>
+                                                            <Run Text="{Binding Title, Mode=OneWay}"/>
+                                                        </TextBlock>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Canvas>
+                            </Grid>
+                        </Border>
+
+                        <Button Style="{StaticResource HintButton}" Command="{Binding CloseCommand}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="60,24,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="30" Height="30" CornerRadius="15" Background="White" BorderBrush="#C9D1D9" BorderThickness="2">
+                                    <TextBlock Text="B" FontSize="13" FontWeight="Bold" Foreground="#4A5560" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Menu" FontSize="19" Foreground="#4A5560" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </c:DesignScaler>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ContentControl x:Name="Host" Content="{Binding}" Focusable="False">
+        <ContentControl.Style>
+            <Style TargetType="ContentControl">
+                <Setter Property="ContentTemplate" Value="{StaticResource PsSheet}"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Family}" Value="switch">
+                        <Setter Property="ContentTemplate" Value="{StaticResource SwitchSheet}"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Family}" Value="wii">
+                        <Setter Property="ContentTemplate" Value="{StaticResource WiiSheet}"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ContentControl.Style>
+    </ContentControl>
+</UserControl>

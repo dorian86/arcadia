@@ -105,7 +105,8 @@ public partial class WiiShell : ConsoleShell
     {
         var g = Vm?.Current;
         if (g == null) return;
-        PreviewInfo.Text = g.PlayTimeSeconds > 0 ? $"{g.PlatformLabel}  ·  {g.PlayTimeText} de jeu  ·  {g.LastPlayedText}" : g.PlatformLabel;
+        PreviewInfo.Text = (g.PlayTimeSeconds > 0 ? $"{g.PlatformLabel}  ·  {g.PlayTimeText} de jeu  ·  {g.LastPlayedText}" : g.PlatformLabel)
+                           + (g.AchievementsShortText is { } ach ? $"  ·  {ach}" : "");
         FavGlyph.Text = g.IsFavorite ? "" : "";
         FavGlyph.Foreground = g.IsFavorite ? new SolidColorBrush(Color.FromRgb(0xE8, 0x4A, 0x6A)) : new SolidColorBrush(Color.FromRgb(0x5E, 0x67, 0x6F));
         StartButton.Tag = _startFocused ? "focus" : null;

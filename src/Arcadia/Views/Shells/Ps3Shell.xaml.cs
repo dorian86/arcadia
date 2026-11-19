@@ -129,7 +129,8 @@ public partial class Ps3Shell : ConsoleShell
         text.Children.Add(new TextBlock { Text = game.Name, FontSize = 26, Foreground = Brushes.White, MaxWidth = 820, TextTrimming = TextTrimming.CharacterEllipsis });
         text.Children.Add(new TextBlock
         {
-            Text = game.PlayTimeSeconds > 0 ? $"{game.PlatformLabel}   ·   {game.PlayTimeText}   ·   {game.LastPlayedText}" : game.PlatformLabel,
+            Text = (game.PlayTimeSeconds > 0 ? $"{game.PlatformLabel}   ·   {game.PlayTimeText}   ·   {game.LastPlayedText}" : game.PlatformLabel)
+                   + (game.AchievementsShortText is { } ach ? $"   ·   {ach}" : ""),
             FontSize = 18, Foreground = new SolidColorBrush(Color.FromArgb(0xB3, 0xFF, 0xFF, 0xFF)), Margin = new Thickness(0, 6, 0, 0), Visibility = Visibility.Collapsed,
         });
         root.Children.Add(text);

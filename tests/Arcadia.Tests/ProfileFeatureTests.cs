@@ -109,6 +109,25 @@ public class TrophyTests
     }
 }
 
+public class ThemeFamilyTests
+{
+    [Theory]
+    [InlineData("ps3", "ps")]
+    [InlineData("ps5", "ps")]
+    [InlineData("switch-light", "switch")]
+    [InlineData("wiiu", "wii")]
+    [InlineData("default", "default")]
+    public void ThemesShareTheLookOfTheirFamily(string key, string family) => Assert.Equal(family, ConsoleTheme.Get(key).Family);
+
+    [Fact]
+    public void ShortAchievementText()
+    {
+        var game = new Game { Store = GameStore.Local, Achievements = new List<Achievement> { new() { Key = "a", UnlockedAt = DateTime.Now }, new() { Key = "b" } } };
+        Assert.Equal("1 / 2 succès", game.AchievementsShortText);
+        Assert.Null(new Game { Store = GameStore.Local }.AchievementsShortText);
+    }
+}
+
 public class RecapTests
 {
     [Fact]

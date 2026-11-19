@@ -78,7 +78,13 @@ Désinstaller : *Paramètres Windows → Applications → Arcadia → Désinstal
 
 **Vignettes des thèmes** : chaque jeu reçoit automatiquement une vignette carrée et une vignette large adaptées aux cases des thèmes (au lieu d'une jaquette portrait recadrée). Avec une illustration et un logo, l'illustration remplit la case et le logo est posé dessus ; sinon la jaquette entière est centrée sur un fond flou tiré d'elle-même. Les vignettes sont créées en arrière-plan, pour les nouveaux jeux aussi, et refaites dès qu'une image du jeu change.
 
-Clavier, souris et manette fonctionnent dans tous les thèmes (flèches, Entrée / A, F / Y favori, R / X au hasard, PgPréc / PgSuiv ou LB / RB pour les catégories). À la souris : la molette fait défiler (pages, rangées, listes), le bouton « précédent » de la souris revient en arrière, les indications à l'écran (Ⓐ Lancer, Ⓑ Retour, ◀ ▶…) sont cliquables, et clic droit sur un jeu ouvre son menu. Dans les rangées qui défilent (Switch, PS4, PS5), le survol met une vignette en évidence et le clic la sélectionne, pour que la rangée ne bouge pas sous le curseur. La fiche d'un jeu et les réglages s'ouvrent dans l'interface Arcadia, avec un bouton *Retour à l'interface…* (ou Échap).
+Clavier, souris et manette fonctionnent dans tous les thèmes (flèches, Entrée / A, F / Y favori, R / X au hasard, PgPréc / PgSuiv ou LB / RB pour les catégories). À la souris : la molette fait défiler (pages, rangées, listes), le bouton « précédent » de la souris revient en arrière, les indications à l'écran (Ⓐ Lancer, Ⓑ Retour, ◀ ▶…) sont cliquables, et clic droit sur un jeu ouvre son menu. Dans les rangées qui défilent (Switch, PS4, PS5), le survol met une vignette en évidence et le clic la sélectionne, pour que la rangée ne bouge pas sous le curseur. Les réglages s'ouvrent dans l'interface Arcadia, avec un bouton *Retour à l'interface…* (ou Échap).
+
+**Dans le style de chaque famille de thèmes** (PlayStation : PS3 / PS4 / PS5 ; Switch sombre et clair ; Wii : Wii / Wii U) :
+- **Fiche du jeu** (Start / O, bouton ⋯) ouverte dans le thème : PlayStation = jeu en plein écran, bouton *Jouer* et cartes *Activités* (temps de jeu, succès avec les icônes des derniers obtenus, actualités) ; Switch = vignette carrée, boutons arrondis, panneaux d'infos et actualités ; Wii = écran de chaîne, boutons *Démarrer*, bandeau d'actualités qui défile. Manette : ◀ ▶ choisir, A valider, B retour, Y favori, Start fiche complète (interface Arcadia). Souris : le survol sélectionne un bouton, le clic le lance, le bouton « précédent » de la souris ou l'indication Ⓑ referme la fiche, les annonces et les indications à l'écran sont cliquables.
+- **Succès** du jeu sélectionné dans chaque thème (carte PS5, colonne PS4, ligne d'infos PS3 / Wii / Wii U, à côté du titre sur Switch).
+- **Notifications** (messages et bannière de trophée) : sombres et carrées en haut sur PlayStation, pastilles en haut à droite sur Switch, blanches à contour bleu sur Wii.
+- **Écran de démarrage** quand Arcadia s'ouvre sur un thème (une touche, un clic ou un bouton le passe) : trait de lumière qui s'élargit (PlayStation), les deux jambes du « A » d'Arcadia qui s'emboîtent avec un déclic (Switch), écran « Appuie sur Ⓐ » (Wii), chacun avec son son. Option développeur `--boot`.
 
 **Mode TV (manette)** — `F11`, bouton *Mode TV*, ou **Start + Back** sur la manette
 - Plein écran façon « Big Picture » : grand carrousel, arrière-plan du jeu sélectionné, catégories (Récents, Tous, Favoris, vos collections).
@@ -90,7 +96,7 @@ Clavier, souris et manette fonctionnent dans tous les thèmes (flèches, Entrée
 - **Couleurs dynamiques** : l'arrière-plan s'illumine avec la couleur dominante de la jaquette affichée.
 - **Fond d'écran** (*Réglages → Apparence*, interface Arcadia uniquement) : l'image est copiée dans `images\wallpaper_*`, assombrie (curseur 0-90 %, 70 % par défaut) et éventuellement floutée ; le flou est calculé une seule fois en image (`wallpaper_blur_*.jpg`), jamais en effet temps réel.
 - Animations : apparition des pages, entrée échelonnée de la fiche, survol des cartes (zoom, reflet, anneau lumineux), fondus enchaînés.
-- **Effets sonores** discrets (démarrage, navigation, ouverture, lancement, favoris, mode TV), générés par l'application (`sounds\v2`, à renommer en v3… dès que la synthèse change), volume réglable ou désactivables. Au lancement, chaque lecteur est « amorcé » par une lecture muette et un flux inaudible réveille la sortie audio pendant 15 s (casques Bluetooth, écrans HDMI qui avalent le début du premier son).
+- **Effets sonores** discrets (démarrage, navigation, ouverture, lancement, favoris, mode TV), générés par l'application (`sounds\v3`, à renommer en v4… dès que la synthèse change), volume réglable ou désactivables. Ils passent par le mixeur d'Arcadia (`AudioMixer`, winmm waveOut 44,1 kHz) : un son relancé s'éteint en fondu de 4 ms au lieu d'être coupé (plus de clics), les sons superposés passent par un limiteur doux, chaque son finit par un fondu en cosinus, et le flux se ferme après 6 s de silence.
 
 **Système** : icône dans la zone de notification (lancer un jeu récent, mode TV, quitter), option « garder ouvert à la fermeture », **lancement avec Windows** (démarre dans la zone de notification).
 
@@ -124,7 +130,7 @@ Prérequis : **SDK .NET 10**, Windows 10/11.
 
 ```powershell
 dotnet build src\Arcadia\Arcadia.csproj                     # compiler
-dotnet test tests\Arcadia.Tests\Arcadia.Tests.csproj         # 90 tests
+dotnet test tests\Arcadia.Tests\Arcadia.Tests.csproj         # 99 tests
 powershell -ExecutionPolicy Bypass -File tools\publish.ps1   # publish\Arcadia.exe autonome
 ```
 
@@ -166,7 +172,7 @@ src/Arcadia
 │   └── Shells/    thèmes de console (Wii, Wii U, Switch, PS3, PS4, PS5) + fenêtre Thèmes
 ├── Controls/      GameGrid (virtualisée), ImageLoader (asynchrone, cache), SmoothScroll, GameMenu…
 └── Themes/        palette, styles, modèles
-tests/Arcadia.Tests   90 tests
+tests/Arcadia.Tests   99 tests
 ```
 
 ## Limites connues

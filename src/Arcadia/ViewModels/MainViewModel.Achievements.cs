@@ -35,7 +35,7 @@ public partial class MainViewModel
     }
 
     /// <summary>Reads what is unlocked in a Steam game from Steam's files on this PC (cheap, offline).</summary>
-    private async Task<int> SyncSteamAchievementsAsync(Game game)
+    public async Task<int> SyncSteamAchievementsAsync(Game game)
     {
         if (!game.AchievementsSynced || !game.HasAchievements || (game.AchievementsAppId ?? game.SteamAppId) is not int appId) return 0;
         var unlocked = await Task.Run(() => SteamLocalAchievements.ReadUnlocked(appId));

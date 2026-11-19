@@ -24,4 +24,13 @@ public sealed record ConsoleTheme(string Key, string Name, string Description, b
     public static ConsoleTheme Get(string? key) => All.FirstOrDefault(t => t.Key == key) ?? All[0];
 
     public bool IsDefault => Key == Default;
+
+    /// <summary>Visual family shared by the game page, notifications and startup screen: "ps", "switch", "wii" or "default".</summary>
+    public string Family => Key switch
+    {
+        "ps3" or "ps4" or "ps5" => "ps",
+        "switch" or "switch-light" => "switch",
+        "wii" or "wiiu" => "wii",
+        _ => "default",
+    };
 }

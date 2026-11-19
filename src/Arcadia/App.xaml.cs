@@ -36,6 +36,7 @@ public partial class App : Application
         public int? Detail;
         public string? DetailName;
         public string? Wallpaper;
+        public bool Boot;
         public string? Dialog;
         public bool WaitMetadata;
         public string? Play;
@@ -71,6 +72,7 @@ public partial class App : Application
                     case "--detail": o.Detail = int.TryParse(Next(), out var d) ? d : 0; break;
                     case "--detail-name": o.DetailName = Next(); break;
                     case "--wallpaper": o.Wallpaper = Next(); break;
+                    case "--boot": o.Boot = true; break; // startup screen of the theme in a developer run
                     case "--dialog": o.Dialog = Next(); break;
                     case "--wait-metadata": o.WaitMetadata = true; break;
                     case "--play": o.Play = Next(); break;
@@ -174,7 +176,11 @@ public partial class App : Application
         if (!(options.Tray && settings.Settings.ShowTrayIcon))
         {
             window.Show();
-            if (!options.IsDeveloperRun && options.UpdatedFrom == null) _vm.Sound.PlayStartup();
+            // a console theme has its own startup screen (and sound); the Arcadia interface its startup sound
+            if (options.Boot || !options.IsDeveloperRun && options.UpdatedFrom == null)
+            {
+                if (!window.PlayBootScreen() && !options.IsDeveloperRun) _vm.Sound.PlayStartup();
+            }
             if (!settings.Settings.OnboardingDone && options.Snapshot == null) _vm.OpenOnboardingCommand.Execute(null);
         }
         if (options.Tv) _vm.EnterTvModeCommand.Execute(null);

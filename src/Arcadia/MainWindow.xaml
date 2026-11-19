@@ -274,6 +274,8 @@
 
         <!-- Console-style theme (Wii, Switch, PS5…): covers the whole window -->
         <ContentControl x:Name="ShellHost" Grid.ColumnSpan="2" Panel.ZIndex="12" Visibility="Collapsed" Focusable="False"/>
+        <!-- game page of the console themes (over the theme, same layer) -->
+        <ContentControl x:Name="SheetHost" Grid.ColumnSpan="2" Panel.ZIndex="12" Visibility="Collapsed" Focusable="False"/>
 
         <!-- Window buttons -->
         <StackPanel x:Name="CaptionButtons" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Panel.ZIndex="13">
@@ -326,7 +328,7 @@
         <!-- "Trophy obtained" banner (above every interface, console themes included) -->
         <Border x:Name="TrophyBannerView" Grid.ColumnSpan="2" Panel.ZIndex="24" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,24,0,0"
                 Visibility="Collapsed" IsHitTestVisible="False" CornerRadius="18" Padding="14,12,28,12" MinWidth="360"
-                Background="#F2141822" BorderBrush="{Binding TierBrush}" BorderThickness="1.5">
+                Background="{DynamicResource ToastBg}" BorderBrush="{Binding TierBrush}" BorderThickness="1.5">
             <Border.RenderTransform><TranslateTransform Y="-140"/></Border.RenderTransform>
             <Border.Effect>
                 <DropShadowEffect BlurRadius="30" ShadowDepth="6" Opacity="0.55" Color="Black"/>
@@ -342,14 +344,14 @@
                         <Run Text="TROPHÉE OBTENU  ·"/>
                         <Run Text="{Binding TierLabel, Mode=OneWay}"/>
                     </TextBlock>
-                    <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/>
-                    <TextBlock Text="{Binding Description}" FontSize="12.5" Foreground="{StaticResource TextSecondary}" Margin="0,1,0,0"/>
+                    <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource ToastFg}" Margin="0,2,0,0"/>
+                    <TextBlock Text="{Binding Description}" FontSize="12.5" Foreground="{DynamicResource ToastMuted}" Margin="0,1,0,0"/>
                 </StackPanel>
             </StackPanel>
         </Border>
 
         <!-- Toasts -->
-        <ItemsControl Grid.Column="1" Panel.ZIndex="25" ItemsSource="{Binding Toasts}" ItemTemplate="{StaticResource ToastTemplate}"
+        <ItemsControl x:Name="ToastHost" Grid.Column="1" Panel.ZIndex="25" ItemsSource="{Binding Toasts}" ItemTemplate="{StaticResource ToastTemplate}"
                       HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,28,26" Focusable="False"/>
     </Grid>
 </Window>

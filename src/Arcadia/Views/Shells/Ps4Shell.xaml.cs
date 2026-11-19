@@ -109,6 +109,7 @@ public partial class Ps4Shell : ConsoleShell
         InfoTime.Text = g == null ? "" : g.PlayTimeSeconds > 0 ? g.PlayTimeText : "—";
         InfoLast.Text = g?.LastPlayedText ?? "";
         InfoPlatform.Text = g?.PlatformLabel ?? "";
+        InfoAch.Text = g is { HasAchievements: true } ? $"{g.AchievementsUnlocked} / {g.Achievements!.Count}" : "—";
         InfoDesc.Text = g?.Description ?? "";
         CategoryText.Text = Vm.Category?.Label ?? "";
         StartButton.Opacity = _fnRow ? 0.5 : 1;

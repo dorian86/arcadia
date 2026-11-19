@@ -90,7 +90,15 @@ public abstract class ConsoleShell : UserControl
 
     public bool HandleKey(Key key)
     {
-        PadButton? pad = key switch
+        if (MapKey(key) is not { } p) return false;
+        HandlePad(p);
+        return true;
+    }
+
+    /// <summary>The keyboard equivalent of the controller buttons in every theme.</summary>
+    public static PadButton? MapKey(Key key)
+    {
+        return key switch
         {
             Key.Left => PadButton.Left,
             Key.Right => PadButton.Right,
@@ -105,9 +113,6 @@ public abstract class ConsoleShell : UserControl
             Key.Apps or Key.O => PadButton.Start,
             _ => null,
         };
-        if (pad is not { } p) return false;
-        HandlePad(p);
-        return true;
     }
 
     public abstract void HandlePad(PadButton button);

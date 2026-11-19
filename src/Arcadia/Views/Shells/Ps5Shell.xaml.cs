@@ -149,6 +149,9 @@ public partial class Ps5Shell : ConsoleShell
         CardTime.Text = g.PlayTimeSeconds > 0 ? g.PlayTimeText : "Jamais lancé";
         CardLast.Text = g.LastPlayedText;
         CardStatus.Text = g.Status != GameStatus.None ? g.StatusLabel : g.Rating > 0 ? new string('★', g.Rating) : "—";
+        CardAch.Visibility = g.HasAchievements ? Visibility.Visible : Visibility.Collapsed;
+        CardAchText.Text = g.HasAchievements ? $"{g.AchievementsUnlocked} / {g.Achievements!.Count}" : "";
+        CardAchBar.ScaleX = g.AchievementsRatio;
         if (animate)
         {
             var tr = (TranslateTransform)Hero.RenderTransform;

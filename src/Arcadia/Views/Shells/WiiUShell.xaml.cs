@@ -63,7 +63,8 @@ public partial class WiiUShell : ConsoleShell
         var g = Vm.Current;
         if (g != null)
         {
-            BannerInfo.Text = g.PlayTimeSeconds > 0 ? $"{g.PlatformLabel}   ·   {g.PlayTimeText} de jeu   ·   {g.LastPlayedText}" : g.PlatformLabel;
+            BannerInfo.Text = (g.PlayTimeSeconds > 0 ? $"{g.PlatformLabel}   ·   {g.PlayTimeText} de jeu   ·   {g.LastPlayedText}" : g.PlatformLabel)
+                              + (g.AchievementsShortText is { } ach ? $"   ·   {ach}" : "");
             FavGlyph.Text = g.IsFavorite ? "" : "";
             if (animate)
             {

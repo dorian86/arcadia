@@ -4,38 +4,30 @@ using Arcadia.Models;
 
 namespace Arcadia.Services;
 
-public enum Sfx { Click, Tick, Navigate, Open, Back, Launch, FavoriteOn, FavoriteOff, Error, Notify, Toggle, Pop, PopNav, Clack, ClackNav, Tock, TockNav, Startup, Trophy }
+public enum Sfx { Click, Tick, Navigate, Open, Back, Launch, FavoriteOn, FavoriteOff, Error, Notify, Toggle, Pop, PopNav, Clack, ClackNav, Tock, TockNav, Startup, Trophy, BootPs, BootSwitch, BootWii }
 
 /// <summary>
-/// Subtle UI sounds, synthesised at first start (no external assets) and played through WPF MediaPlayers.
+/// Subtle UI sounds, synthesised at first start (no external assets, cached as .wav) and played through
+/// Arcadia's own mixer (<see cref="AudioMixer"/>): no clicks when a sound is replayed, nothing lost at startup.
 /// </summary>
 public sealed class SoundService
 {
-    private const int Rate = 44100;
+    private const int Rate = AudioMixer.Rate;
     /// <summary>Folder of the generated sounds: change it whenever the synthesis changes.</summary>
-    public const string SoundsVersion = "v2";
+    public const string SoundsVersion = "v3";
     private readonly AppSettings _settings;
-    private readonly Dictionary<Sfx, MediaPlayer[]> _players = new();
-    private readonly Dictionary<Sfx, int> _next = new();
-    private readonly HashSet<MediaPlayer> _priming = new();
-    private readonly HashSet<MediaPlayer> _used = new();
-    private DispatcherTimer? _primeTimer;
-    private MediaPlayer? _wake;
+    private readonly Dictionary<Sfx, float[]> _sounds = new();
+    private readonly AudioMixer _mixer = new();
     private DateTime _lastTick;
 
     public SoundService(AppSettings settings) => _settings = settings;
 
-    /// <summary>
-    /// Creates the players. The very first playback of a MediaPlayer, and of an audio output that was asleep
-    /// (Bluetooth headsets, HDMI screens), loses its beginning: the first sound of a session was reduced to a
-    /// tiny blip. So every player is primed by a silent playback, and a near-silent stream wakes the output up
-    /// for the first seconds (startup sound, "new games detected" notification).
-    /// </summary>
+    /// <summary>Loads the sounds (generated once into the data folder, then read back from there).</summary>
     public void Initialize()
     {
         try
         {
-            // v2: sounds rebuilt after the fix of the bells (v1 files were mostly silent)
+            // v2: bells fixed (v1 files were mostly silent); v3: longer short sounds and smooth endings (no clicks)
             var dir = Path.Combine(AppPaths.DataDir, "sounds", SoundsVersion);
             Directory.CreateDirectory(dir);
             foreach (var old in Directory.EnumerateDirectories(Path.Combine(AppPaths.DataDir, "sounds")).Where(d => Path.GetFileName(d) != SoundsVersion))
@@ -43,76 +35,29 @@ public sealed class SoundService
             foreach (Sfx sfx in Enum.GetValues<Sfx>())
             {
                 var file = Path.Combine(dir, sfx + ".wav");
-                if (!File.Exists(file)) File.WriteAllBytes(file, ToWav(Synthesize(sfx)));
-                var count = sfx is Sfx.Tick or Sfx.Click or Sfx.Pop or Sfx.Clack or Sfx.Tock ? 3 : sfx == Sfx.Startup ? 1 : 2;
-                var players = new MediaPlayer[count];
-                for (var i = 0; i < count; i++)
-                {
-                    var p = new MediaPlayer();
-                    p.MediaOpened += (_, _) => Prime(p);
-                    p.Open(new Uri(file));
-                    players[i] = p;
-                }
-                _players[sfx] = players;
-                _next[sfx] = 0;
+                byte[] wav;
+                if (File.Exists(file)) wav = File.ReadAllBytes(file);
+                else File.WriteAllBytes(file, wav = ToWav(Synthesize(sfx)));
+                _sounds[sfx] = FromWav(wav);
             }
-            if (_settings.SoundEnabled) WakeOutput(dir);
+            try { File.Delete(Path.Combine(dir, "Wake.wav")); } catch { /* left by 1.0.3 */ }
         }
         catch (Exception ex) { Log.Warn($"Sound init failed: {ex.Message}"); }
     }
 
-    /// <summary>Silent playback: the player's audio pipeline is ready before its first real sound.</summary>
-    private void Prime(MediaPlayer p)
+    /// <summary>Samples of a 16-bit mono .wav written by <see cref="ToWav"/> (anything else: silence).</summary>
+    public static float[] FromWav(byte[] wav)
     {
-        if (_used.Contains(p)) return; // a real sound was asked before the file finished opening
-        try
-        {
-            p.Volume = 0;
-            _priming.Add(p);
-            p.Play();
-            _primeTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) => EndPriming(), Dispatcher.CurrentDispatcher);
-            _primeTimer.Stop();
-            _primeTimer.Start();
-        }
-        catch { /* audio device unavailable */ }
-    }
-
-    private void EndPriming()
-    {
-        _primeTimer?.Stop();
-        foreach (var p in _priming)
-            try { p.Stop(); } catch { /* ignore */ }
-        _priming.Clear();
-    }
-
-    /// <summary>Plays an inaudible stream for the first seconds so that a sleeping output is awake for real sounds.</summary>
-    private void WakeOutput(string dir)
-    {
-        var file = Path.Combine(dir, "Wake.wav");
-        if (!File.Exists(file))
-        {
-            // -80 dB dither rather than pure zeros: some drivers skip a stream of digital silence
-            var rng = new Random(3);
-            var samples = new float[(int)(1.0 * Rate)];
-            for (var i = 0; i < samples.Length; i++) samples[i] = (float)((rng.NextDouble() * 2 - 1) * 0.0001);
-            File.WriteAllBytes(file, ToWav(samples, normalize: false));
-        }
-        _wake = new MediaPlayer { Volume = 1 };
-        var until = DateTime.Now.AddSeconds(15);
-        _wake.MediaEnded += (_, _) =>
-        {
-            if (DateTime.Now > until) { _wake.Close(); _wake = null; return; }
-            _wake.Position = TimeSpan.Zero;
-            _wake.Play();
-        };
-        _wake.Open(new Uri(file));
-        _wake.Play();
+        if (wav.Length < 44 || wav[0] != 'R' || wav[8] != 'W') return Array.Empty<float>();
+        var samples = new float[(wav.Length - 44) / 2];
+        for (var i = 0; i < samples.Length; i++) samples[i] = BitConverter.ToInt16(wav, 44 + i * 2) / 32768f;
+        return samples;
     }
 
     /// <summary>The startup sound, once the window appears (not when Arcadia starts hidden in the tray).</summary>
     public void PlayStartup()
     {
-        // a short delay: the output wakes up, and the sound comes with the window's fade-in
+        // a short delay: the sound comes with the window's fade-in, after the busy first frames
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
         timer.Tick += (_, _) => { timer.Stop(); Play(Sfx.Startup); };
         timer.Start();
@@ -136,7 +81,7 @@ public sealed class SoundService
     {
         var isTick = sfx == Sfx.Tick;
         sfx = Remap(sfx);
-        if (!_settings.SoundEnabled || !_players.TryGetValue(sfx, out var pool)) return;
+        if (!_settings.SoundEnabled || !_sounds.TryGetValue(sfx, out var samples)) return;
         if (isTick)
         {
             if ((DateTime.Now - _lastTick).TotalMilliseconds < 45) return;
@@ -144,17 +89,12 @@ public sealed class SoundService
         }
         try
         {
-            var i = _next[sfx];
-            _next[sfx] = (i + 1) % pool.Length;
-            var p = pool[i];
-            _priming.Remove(p);
-            _used.Add(p);
-            p.Volume = Math.Clamp(_settings.SoundVolume, 0, 1) * Gain(sfx);
-            p.Stop();
-            p.Position = TimeSpan.Zero;
-            p.Play();
+            var volume = (float)(Math.Clamp(_settings.SoundVolume, 0, 1) * Gain(sfx));
+            // navigation sounds replace each other (soft fade); the others may overlap once
+            var maxInstances = sfx is Sfx.Tick or Sfx.Pop or Sfx.Clack or Sfx.Tock or Sfx.Navigate or Sfx.PopNav or Sfx.ClackNav or Sfx.TockNav ? 1 : 2;
+            _mixer.Play(samples, (int)sfx, volume, maxInstances);
         }
-        catch { /* audio device unavailable */ }
+        catch (Exception ex) { Log.Warn($"Sound failed: {ex.Message}"); }
     }
 
     private static double Gain(Sfx s) => s switch
@@ -164,6 +104,8 @@ public sealed class SoundService
         Sfx.Launch => 0.9,
         Sfx.Startup => 0.8,
         Sfx.Trophy => 0.7,
+        Sfx.BootPs or Sfx.BootWii => 0.8,
+        Sfx.BootSwitch => 0.7,
         _ => 0.75,
     };
 
@@ -173,8 +115,9 @@ public sealed class SoundService
 
     public static float[] Synthesize(Sfx sfx) => sfx switch
     {
-        Sfx.Click => Mix(0.09, Bell(1320, 0, 0.05, 0.35), Bell(1980, 0, 0.03, 0.12)),
-        Sfx.Tick => Mix(0.05, Bell(1650, 0, 0.025, 0.28)),
+        // short sounds last long enough for their note to die away (a note cut while ringing clicks)
+        Sfx.Click => Mix(0.14, Bell(1320, 0, 0.05, 0.35), Bell(1980, 0, 0.03, 0.12)),
+        Sfx.Tick => Mix(0.08, Bell(1650, 0, 0.025, 0.28)),
         Sfx.Toggle => Mix(0.12, Glide(660, 990, 0, 0.07, 0.3)),
         Sfx.Navigate => Reverb(Mix(0.35, Glide(520, 780, 0, 0.12, 0.22), Bell(1040, 0.05, 0.18, 0.12), Noise(0, 0.12, 0.05)), 0.25),
         Sfx.Open => Reverb(Mix(0.6, Bell(659.3, 0, 0.35, 0.32), Bell(987.8, 0.07, 0.45, 0.3), Bell(1975.5, 0.07, 0.2, 0.05)), 0.3),
@@ -186,6 +129,13 @@ public sealed class SoundService
         Sfx.FavoriteOff => Mix(0.3, Glide(900, 600, 0, 0.12, 0.25)),
         Sfx.Error => Reverb(Mix(0.55, Bell(440, 0, 0.25, 0.3, harmonic: 0.35), Bell(349.2, 0.12, 0.35, 0.3, harmonic: 0.35)), 0.2),
         Sfx.Notify => Reverb(Mix(0.6, Bell(784, 0, 0.45, 0.26), Bell(1568, 0, 0.3, 0.06)), 0.3),
+        // startup screens of the console themes (original sounds, only the mood is evoked)
+        Sfx.BootPs => Reverb(Mix(2.4,
+            Glide(55, 110, 0, 1.6, 0.14), Bell(220, 0.35, 1.6, 0.12, harmonic: 0.4), Bell(330, 0.5, 1.6, 0.11, harmonic: 0.3),
+            Bell(440, 0.65, 1.8, 0.11), Bell(1760, 0.85, 1.2, 0.035)), 0.6),
+        Sfx.BootSwitch => Mix(0.45, Noise(0, 0.012, 0.5), Bell(1900, 0, 0.03, 0.26, harmonic: 0.5),
+            Noise(0.12, 0.012, 0.6), Bell(2300, 0.12, 0.04, 0.3, harmonic: 0.5)),
+        Sfx.BootWii => Reverb(Mix(1.3, Bell(784.0, 0, 0.6, 0.2), Bell(1046.5, 0.12, 0.7, 0.2), Bell(1318.5, 0.24, 0.9, 0.18), Bell(2637.0, 0.24, 0.4, 0.03)), 0.45),
         // bright rising sparkle (C - E - G - C) with a shimmering top
         Sfx.Trophy => Reverb(Mix(1.1,
             Bell(1046.5, 0.00, 0.45, 0.2), Bell(1318.5, 0.07, 0.45, 0.2), Bell(1568.0, 0.14, 0.55, 0.22),
@@ -196,11 +146,11 @@ public sealed class SoundService
             Bell(392.0, 0.00, 1.0, 0.18), Bell(587.3, 0.09, 1.0, 0.18), Bell(784.0, 0.18, 1.1, 0.2),
             Bell(1174.7, 0.27, 1.2, 0.17), Bell(1568.0, 0.36, 1.0, 0.1), Bell(3136.0, 0.36, 0.4, 0.025)), 0.5),
         // console-flavoured navigation (original sounds, only the character is evoked)
-        Sfx.Pop => Mix(0.09, Glide(900, 1500, 0, 0.05, 0.3), Bell(1500, 0.03, 0.05, 0.1)),
+        Sfx.Pop => Mix(0.16, Glide(900, 1500, 0, 0.05, 0.3), Bell(1500, 0.03, 0.05, 0.1)),
         Sfx.PopNav => Reverb(Mix(0.25, Glide(700, 1250, 0, 0.09, 0.28), Bell(1870, 0.06, 0.12, 0.1)), 0.3),
-        Sfx.Clack => Mix(0.04, Noise(0, 0.012, 0.35), Bell(2400, 0, 0.012, 0.18, harmonic: 0.5)),
-        Sfx.ClackNav => Mix(0.08, Noise(0, 0.015, 0.4), Bell(1800, 0, 0.03, 0.2, harmonic: 0.4), Bell(2700, 0.025, 0.03, 0.12)),
-        Sfx.Tock => Mix(0.07, Bell(880, 0, 0.03, 0.26, harmonic: 0.05), Bell(440, 0, 0.04, 0.1, harmonic: 0)),
+        Sfx.Clack => Mix(0.06, Noise(0, 0.012, 0.35), Bell(2400, 0, 0.012, 0.18, harmonic: 0.5)),
+        Sfx.ClackNav => Mix(0.12, Noise(0, 0.015, 0.4), Bell(1800, 0, 0.03, 0.2, harmonic: 0.4), Bell(2700, 0.025, 0.03, 0.12)),
+        Sfx.Tock => Mix(0.12, Bell(880, 0, 0.03, 0.26, harmonic: 0.05), Bell(440, 0, 0.04, 0.1, harmonic: 0)),
         Sfx.TockNav => Reverb(Mix(0.3, Bell(587.3, 0, 0.18, 0.2, harmonic: 0.05), Bell(880, 0.04, 0.2, 0.12, harmonic: 0.05)), 0.35),
         _ => Mix(0.05),
     };
@@ -279,9 +229,10 @@ public sealed class SoundService
         return outBuf;
     }
 
-    private static byte[] ToWav(float[] samples, bool normalize = true)
+    public static byte[] ToWav(float[] samples, bool normalize = true)
     {
-        // fade out the last 5 ms and normalise softly
+        // smooth ending (a quarter of the sound, up to 30 ms, cosine-shaped) and soft normalisation
+        samples = FadeOut(samples);
         var peak = samples.Select(Math.Abs).DefaultIfEmpty(0).Max();
         var norm = normalize && peak > 0.95f ? 0.95f / peak : 1f;
         using var ms = new MemoryStream();
@@ -291,13 +242,22 @@ public sealed class SoundService
         w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)1); w.Write((short)1);
         w.Write(Rate); w.Write(Rate * 2); w.Write((short)2); w.Write((short)16);
         w.Write("data"u8.ToArray()); w.Write(dataLen);
-        var fade = (int)(0.005 * Rate);
-        for (var i = 0; i < samples.Length; i++)
-        {
-            var g = i > samples.Length - fade ? (samples.Length - i) / (float)fade : 1f;
-            w.Write((short)Math.Clamp(samples[i] * norm * g * 32767, short.MinValue, short.MaxValue));
-        }
+        foreach (var s in samples)
+            w.Write((short)Math.Clamp(s * norm * 32767, short.MinValue, short.MaxValue));
         w.Flush();
         return ms.ToArray();
+    }
+
+    /// <summary>Cosine fade over the end of the sound: whatever still rings dies away instead of being cut (no click).</summary>
+    public static float[] FadeOut(float[] samples)
+    {
+        var copy = (float[])samples.Clone();
+        var fade = Math.Min((int)(0.03 * Rate), copy.Length / 4);
+        for (var k = 0; k < fade; k++)
+        {
+            var i = copy.Length - fade + k;
+            copy[i] *= (float)(0.5 + 0.5 * Math.Cos(Math.PI * (k + 1) / fade));
+        }
+        return copy;
     }
 }

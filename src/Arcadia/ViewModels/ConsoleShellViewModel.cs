@@ -254,11 +254,25 @@ public partial class ConsoleShellViewModel : ObservableObject
         if (game != null) _main.ToggleFavorite(game);
     }
 
+    /// <summary>The game page drawn by the theme itself (null when closed).</summary>
+    [ObservableProperty] private GameSheetViewModel? _sheet;
+
     [RelayCommand]
     private void OpenDetails(object? arg)
     {
         var game = arg as Game ?? Current;
-        if (game != null) _main.ShowClassic(null, game);
+        if (game == null) return;
+        Sheet?.Dispose();
+        Sheet = new GameSheetViewModel(_main, this, game);
+        _main.Sound.Play(Sfx.Open);
+    }
+
+    public void CloseSheet()
+    {
+        if (Sheet == null) return;
+        Sheet.Dispose();
+        Sheet = null;
+        _main.Sound.Play(Sfx.Back);
     }
 
     [RelayCommand]
