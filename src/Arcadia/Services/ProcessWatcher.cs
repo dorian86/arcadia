@@ -98,6 +98,22 @@ public static class ProcessWatcher
         return true;
     }
 
+    /// <summary>Executable paths of the running processes (one snapshot; processes that cannot be read are left out).</summary>
+    public static List<string> RunningPaths()
+    {
+        var list = new List<string>();
+        foreach (var p in Process.GetProcesses())
+        {
+            try
+            {
+                if (p.Id <= 4 || p.Id == OwnPid) continue;
+                if (GetPath(p.Id) is { } path) list.Add(path);
+            }
+            finally { p.Dispose(); }
+        }
+        return list;
+    }
+
     private static string? GetPath(int pid)
     {
         var h = OpenProcess(0x1000 /* PROCESS_QUERY_LIMITED_INFORMATION */, false, pid);

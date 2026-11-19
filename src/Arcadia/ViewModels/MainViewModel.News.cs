@@ -29,6 +29,25 @@ public partial class MainViewModel
         }
     }
 
+    private readonly Dictionary<Game, DateTime> _statsLoadedAt = new();
+
+    /// <summary>Players online now, price, Metacritic… (Steam's official data), refreshed every 10 minutes.</summary>
+    public async Task LoadSteamStatsAsync(Game game)
+    {
+        if (game.NewsAppId is not int appId) return;
+        if (_statsLoadedAt.TryGetValue(game, out var at) && DateTime.Now - at < TimeSpan.FromMinutes(10)) return;
+        _statsLoadedAt[game] = DateTime.Now;
+        try
+        {
+            game.SteamStats = await SteamStatsClient.GetAsync(appId);
+        }
+        catch (Exception ex)
+        {
+            _statsLoadedAt.Remove(game);
+            Log.Warn($"Steam figures unavailable for '{game.Name}': {ex.Message}");
+        }
+    }
+
     [RelayCommand]
     private void OpenNews(GameNews? news)
     {

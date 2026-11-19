@@ -172,6 +172,9 @@ public partial class MainViewModel : ObservableObject
 
     public bool IsCollectionSection => Section == Section.Collection;
 
+    /// <summary>"All games" filters: every game, or only the ones whose file can no longer be found.</summary>
+    public bool ShowMissingFilter => Section is Section.All or Section.Missing;
+
     public string PageTitle => Section switch
     {
         Section.Favorites => "Favoris",
@@ -292,6 +295,7 @@ public partial class MainViewModel : ObservableObject
 
     public void Shutdown()
     {
+        _backgroundPlaytime?.Dispose(); // sessions in progress outside Arcadia are recorded up to now
         Library.SaveNow();
         _settingsService.SaveNow();
     }
@@ -354,6 +358,7 @@ public partial class MainViewModel : ObservableObject
         ClearSelection();
         if (value == Section.Stats) Stats = new StatsViewModel(Library.Games.ToList(), BuildTrophyItems());
         OnPropertyChanged(nameof(IsLibrarySection));
+        OnPropertyChanged(nameof(ShowMissingFilter));
         OnPropertyChanged(nameof(IsCollectionSection));
         Refresh();
         UpdateAmbient();
@@ -380,7 +385,11 @@ public partial class MainViewModel : ObservableObject
         UpdateAmbient();
         if (value != null) _ = Metadata.EnsureScreenshotsAsync(value);
         if (value != null) _ = SyncSteamAchievementsAsync(value);
-        if (value != null) _ = LoadNewsAsync(value);
+        if (value != null)
+        {
+            _ = LoadNewsAsync(value);
+            _ = LoadSteamStatsAsync(value);
+        }
         OnDetailClosedForShell(value);
     }
 
@@ -894,6 +903,11 @@ public partial class MainViewModel : ObservableObject
     private void ToggleHidden(object? arg)
     {
         if (arg is not Game game) return;
+        if (game.IsSelected && SelectedCount > 1)
+        {
+            BulkHide();
+            return;
+        }
         game.IsHidden = !game.IsHidden;
         if (game.IsHidden && DetailGame == game) DetailGame = null;
         ShowToast(game.IsHidden ? $"« {game.Name} » est masqué (visible dans « Masqués »)" : $"« {game.Name} » est de nouveau visible", ToastKind.Info);
@@ -915,6 +929,12 @@ public partial class MainViewModel : ObservableObject
     private void Remove(object? arg)
     {
         if (arg is not Game game) return;
+        // right-click on one of several selected games: the whole selection
+        if (game.IsSelected && SelectedCount > 1)
+        {
+            BulkRemove();
+            return;
+        }
         Dialogs.Add(new ConfirmDialogViewModel(this)
         {
             Title = "Retirer de la bibliothèque ?",

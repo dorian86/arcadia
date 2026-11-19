@@ -37,7 +37,7 @@ public sealed class DetectedGame
 }
 
 /// <summary>
-/// Finds games installed with Steam, Epic Games, GOG Galaxy, Ubisoft Connect and the Xbox app.
+/// Finds games installed with Steam, Epic Games, GOG Galaxy, Ubisoft Connect, the Xbox app, the EA app, Battle.net and Riot.
 /// Everything is read-only (manifests and registry); nothing is launched or modified.
 /// </summary>
 public static partial class StoreScanner
@@ -48,6 +48,7 @@ public static partial class StoreScanner
         foreach (var (name, scan) in new (string, Func<IEnumerable<DetectedGame>>)[]
                  {
                      ("Steam", ScanSteam), ("Epic", ScanEpic), ("GOG", ScanGog), ("Ubisoft", ScanUbisoft), ("Xbox", ScanXbox),
+                     ("EA", ScanEa), ("Battle.net", ScanBattleNet), ("Riot", ScanRiot),
                  })
         {
             try
@@ -330,6 +331,14 @@ public static partial class StoreScanner
         if (t.StartsWith("uplay:", StringComparison.OrdinalIgnoreCase)) return GameStore.Ubisoft;
         if (t.StartsWith("com.epicgames", StringComparison.OrdinalIgnoreCase)) return GameStore.Epic;
         if (t.StartsWith("shell:AppsFolder", StringComparison.OrdinalIgnoreCase)) return GameStore.Xbox;
+        if (t.StartsWith("origin2:", StringComparison.OrdinalIgnoreCase) || t.StartsWith("origin:", StringComparison.OrdinalIgnoreCase)
+            || t.StartsWith("link2ea:", StringComparison.OrdinalIgnoreCase)) return GameStore.EA;
+        if (t.StartsWith("battlenet:", StringComparison.OrdinalIgnoreCase) || t.StartsWith("blizzard:", StringComparison.OrdinalIgnoreCase)
+            || Path.GetFileName(target).Equals("Battle.net.exe", StringComparison.OrdinalIgnoreCase) && g.Arguments?.Contains("--exec", StringComparison.OrdinalIgnoreCase) == true)
+            return GameStore.BattleNet;
+        if (Path.GetFileName(target).Equals("RiotClientServices.exe", StringComparison.OrdinalIgnoreCase) && g.Arguments?.Contains("--launch-product", StringComparison.OrdinalIgnoreCase) == true
+            || target.Contains(@"\Riot Games\", StringComparison.OrdinalIgnoreCase) && !target.Contains(@"\Riot Client\", StringComparison.OrdinalIgnoreCase))
+            return GameStore.Riot;
         if (target.Contains(@"\Epic Games\", StringComparison.OrdinalIgnoreCase)) return GameStore.Epic;
         if (target.Contains(@"\GOG Galaxy\Games\", StringComparison.OrdinalIgnoreCase) || target.Contains(@"\GOG Games\", StringComparison.OrdinalIgnoreCase)) return GameStore.GOG;
         if (target.Contains(@"\XboxGames\", StringComparison.OrdinalIgnoreCase) || target.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)) return GameStore.Xbox;

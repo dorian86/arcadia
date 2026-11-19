@@ -48,6 +48,7 @@ public partial class App : Application
         public string? Keys;
         public string? Mouse;
         public int Scroll;
+        public int Select;
         public bool Tray;
         public bool Uninstall;
         public bool Tv;
@@ -84,6 +85,7 @@ public partial class App : Application
                     case "--keys": o.Keys = Next(); break;
                     case "--mouse": o.Mouse = Next(); break;
                     case "--scroll": int.TryParse(Next(), out o.Scroll); break;
+                    case "--select": int.TryParse(Next(), out o.Select); break;
                     case "--tray": o.Tray = true; break;
                     case "--uninstall": o.Uninstall = true; break;
                     case "--tv": o.Tv = true; break;
@@ -162,6 +164,7 @@ public partial class App : Application
         _vm.Sound.Initialize();
         _vm.Initialize();
         if (options.UpdatedFrom != null) _vm.AnnounceUpdated();
+        if (!options.IsDeveloperRun) _ = _vm.ShowWhatsNewAsync();
 
         var window = new MainWindow(_vm);
         if (options.Size is Size size)
@@ -319,6 +322,13 @@ public partial class App : Application
         if (o.DetailName != null)
             vm.DetailGame = vm.Library.Games.FirstOrDefault(g => g.Name.Contains(o.DetailName, StringComparison.OrdinalIgnoreCase)) ?? vm.DetailGame;
         if (o.Dialog == "onboarding") vm.OpenOnboardingCommand.Execute(null); // shown on an empty library too
+        // --dialog whatsnew: the "Quoi de neuf" window with sample notes (layout check)
+        if (o.Dialog == "whatsnew")
+            vm.Dialogs.Add(UpdateDialogViewModel.WhatsNew(vm, UpdateService.Current,
+                "# Arcadia 1.1.7\n\n## Nouveautés\n\n- **Barre de sélection** sur l'accueil\n- Filtre **Jeux introuvables**\n  - avec le nombre de jeux\n\n"
+                + "# Arcadia 1.1.6\n\n- 📂 **Recherche des jeux dans un dossier** : `Chercher dans un dossier…`"));
+        // --select n: the first n games are selected (multi-selection bar)
+        foreach (var g in vm.Library.Games.OrderByDescending(g => g.LastPlayedAt).Take(o.Select)) g.IsSelected = true;
         var first = vm.DetailGame ?? vm.VisibleGames.FirstOrDefault() ?? vm.Library.Games.FirstOrDefault();
         if (first != null)
         {

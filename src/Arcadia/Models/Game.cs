@@ -11,7 +11,7 @@ public enum MetadataState { Pending, Matched, NotFound, Manual }
 public enum SortMode { NameAsc, NameDesc, AddedDesc, AddedAsc, LastPlayed, PlayTime, Rating }
 
 /// <summary>Where a game comes from. Unknown = not detected yet (older libraries).</summary>
-public enum GameStore { Unknown, Steam, Epic, GOG, Ubisoft, Xbox, EA, Emulator, Local, Other }
+public enum GameStore { Unknown, Steam, Epic, GOG, Ubisoft, Xbox, EA, Emulator, Local, Other, BattleNet, Riot }
 
 public sealed class PlaySession
 {
@@ -79,6 +79,8 @@ public static class StoreInfo
         GameStore.Ubisoft => "Ubisoft Connect",
         GameStore.Xbox => "Xbox",
         GameStore.EA => "EA app",
+        GameStore.BattleNet => "Battle.net",
+        GameStore.Riot => "Riot Games",
         GameStore.Emulator => "Émulation",
         GameStore.Local => "Jeux installés",
         _ => "Autres",
@@ -178,6 +180,16 @@ public partial class Game : ObservableObject
     [JsonIgnore] public bool HasNews => News is { Count: > 0 };
     /// <summary>Steam game whose announcements are shown.</summary>
     [JsonIgnore] public int? NewsAppId => SteamAppId ?? AchievementsAppId;
+
+    /// <summary>Live Steam figures (players now, price, Metacritic…), loaded when the game page opens, never saved.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasSteamStats))]
+    [property: JsonIgnore]
+    private Services.Online.SteamStats? _steamStats;
+
+    [JsonIgnore] public bool HasSteamStats => SteamStats != null;
+
+    /// <summary>HowLongToBeat search for this game (opened in the browser).</summary>
+    [JsonIgnore] public string HowLongToBeatUrl => "https://howlongtobeat.com/?q=" + Uri.EscapeDataString(Name);
 
     /// <summary>Dominant colour of the cover (#RRGGBB), used for ambient lighting.</summary>
     [ObservableProperty] private string? _accentColor;

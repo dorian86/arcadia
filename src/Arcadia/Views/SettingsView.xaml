@@ -227,7 +227,7 @@
             <!-- Steam & emulation -->
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
-                    <TextBlock Text="Steam et émulation" Style="{StaticResource CardHeader}" Margin="0,0,0,18"/>
+                    <TextBlock Text="Temps de jeu et émulation" Style="{StaticResource CardHeader}" Margin="0,0,0,18"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -241,6 +241,13 @@
                         </CheckBox>
                         <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Importer maintenant" c:Ui.Glyph="&#xE896;" Command="{Binding ImportSteamPlaytimeCommand}"/>
                     </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.TrackOutsidePlaytime}">
+                        <StackPanel>
+                            <TextBlock Text="Mesurer le temps de jeu des jeux lancés hors d'Arcadia" Style="{StaticResource RowTitle}"/>
+                            <TextBlock Text="Tant qu'Arcadia est ouvert (même réduit dans la zone de notification), il reconnaît les jeux de votre bibliothèque lancés depuis Steam, Epic, l'EA app, Battle.net, Ubisoft, Xbox ou un raccourci, et ajoute leur temps de jeu. Epic, Xbox, EA, Ubisoft et Battle.net ne gardent pas ce temps sur votre PC : c'est la seule façon de le connaître." Style="{StaticResource RowHint}"/>
+                        </StackPanel>
+                    </CheckBox>
                     <Border Style="{StaticResource Divider}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>

@@ -486,7 +486,9 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="Glyph" Text="{TemplateBinding c:Ui.Glyph}" Style="{StaticResource Glyph}"
                                        FontSize="14" Margin="14,0,0,0" Foreground="{StaticResource TextMuted}"/>
-                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" Margin="{TemplateBinding Padding}"
+                            <!-- no Margin=Padding here: the TextBox already applies its Padding to the text (the placeholder below
+                                 gets it once too), so the caret starts exactly where the example sentence starts -->
+                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Focusable="False"
                                           HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                             <TextBlock x:Name="Placeholder" Grid.Column="1" Text="{TemplateBinding c:Ui.Placeholder}"
@@ -545,7 +547,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="Glyph" Text="{TemplateBinding c:Ui.Glyph}" Style="{StaticResource Glyph}"
                                        FontSize="14" Margin="14,0,0,0" Foreground="{StaticResource TextMuted}"/>
-                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" Margin="{TemplateBinding Padding}"
+                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1"
                                           VerticalAlignment="Center" Focusable="False"
                                           HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                             <TextBlock x:Name="Placeholder" Grid.Column="1" Text="{TemplateBinding c:Ui.Placeholder}"

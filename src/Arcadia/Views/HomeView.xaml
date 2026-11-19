@@ -4,6 +4,7 @@
              xmlns:c="clr-namespace:Arcadia.Controls"
              xmlns:v="clr-namespace:Arcadia.Views"
              xmlns:vm="clr-namespace:Arcadia.ViewModels">
+    <Grid>
     <ScrollViewer x:Name="Scroller" c:SmoothScroll.IsEnabled="True" VerticalScrollBarVisibility="Auto" Focusable="False">
         <StackPanel Margin="44,48,44,48">
 
@@ -183,4 +184,7 @@
                          SeeAllSection="{x:Static vm:Section.All}"/>
         </StackPanel>
     </ScrollViewer>
+    <!-- shown when games are selected (Ctrl+click) -->
+    <v:SelectionBar/>
+    </Grid>
 </UserControl>

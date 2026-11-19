@@ -517,7 +517,8 @@
                             </Grid>
                         </StackPanel>
 
-                        <Border Grid.Column="2" CornerRadius="16" Background="#CC141822" BorderBrush="{StaticResource Stroke}"
+                        <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                        <Border CornerRadius="16" Background="#CC141822" BorderBrush="{StaticResource Stroke}"
                                 BorderThickness="1" Padding="24,22,24,10" VerticalAlignment="Top">
                             <StackPanel>
                                 <TextBlock Text="Informations" Style="{StaticResource SectionTitle}" FontSize="16" Margin="0,0,0,18"/>
@@ -547,6 +548,67 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+
+                        <!-- Live Steam figures (official Steam data) + SteamDB / HowLongToBeat pages -->
+                        <Border CornerRadius="16" Background="#CC141822" BorderBrush="{StaticResource Stroke}" Margin="0,16,0,0"
+                                BorderThickness="1" Padding="24,20,24,18">
+                            <StackPanel>
+                                <StackPanel Visibility="{Binding HasSteamStats, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="En ce moment sur Steam" Style="{StaticResource SectionTitle}" FontSize="16" Margin="0,0,0,16"/>
+                                    <Grid DataContext="{Binding SteamStats}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Margin="0,0,10,14">
+                                            <TextBlock Text="Joueurs en ligne" Style="{StaticResource InfoKey}"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="8" Height="8" Fill="{StaticResource Success}" VerticalAlignment="Center" Margin="0,1,7,0"/>
+                                                <TextBlock Text="{Binding PlayersText}" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="0,0,0,14">
+                                            <TextBlock Text="Prix" Style="{StaticResource InfoKey}"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding PriceText}" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                                <Border CornerRadius="5" Background="#3D4CAF50" Padding="6,1" Margin="8,2,0,0" VerticalAlignment="Center"
+                                                        Visibility="{Binding HasDiscount, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="{Binding DiscountText}" FontSize="11.5" FontWeight="SemiBold" Foreground="{StaticResource Success}"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding PriceBefore}" FontSize="11.5" Foreground="{StaticResource TextMuted}" TextDecorations="Strikethrough"
+                                                       Visibility="{Binding HasDiscount, Converter={StaticResource BoolToVis}}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="1" Margin="0,0,10,4">
+                                            <TextBlock Text="Recommandations" Style="{StaticResource InfoKey}"/>
+                                            <TextBlock Text="{Binding RecommendationsText}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,4">
+                                            <TextBlock Text="Metacritic · Succès" Style="{StaticResource InfoKey}"/>
+                                            <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}">
+                                                <Run Text="{Binding MetacriticText, Mode=OneWay}"/><Run Text="  ·  " Foreground="{StaticResource TextMuted}"/><Run Text="{Binding AchievementsText, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Border Height="1" Background="{StaticResource Stroke}" Margin="0,12,0,14"/>
+                                </StackPanel>
+                                <TextBlock Text="Pour aller plus loin" Style="{StaticResource InfoKey}" Margin="0,0,0,8"/>
+                                <WrapPanel>
+                                    <Button Style="{StaticResource SecondaryButton}" Content="SteamDB" c:Ui.Glyph="&#xE9D9;" Height="34" FontSize="12.5" Padding="12,0" Margin="0,0,8,6"
+                                            ToolTip="Historique des prix, pic de joueurs, mises à jour (steamdb.info)"
+                                            Visibility="{Binding HasSteamStats, Converter={StaticResource BoolToVis}}"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenUrlCommand}" CommandParameter="{Binding SteamStats.SteamDbUrl}"/>
+                                    <Button Style="{StaticResource SecondaryButton}" Content="HowLongToBeat" c:Ui.Glyph="&#xE916;" Height="34" FontSize="12.5" Padding="12,0" Margin="0,0,8,6"
+                                            ToolTip="Combien de temps pour le finir : histoire, quêtes annexes, 100 % (howlongtobeat.com)"
+                                            Command="{Binding Source={x:Static vm:MainViewModel.Instance}, Path=OpenUrlCommand}" CommandParameter="{Binding HowLongToBeatUrl}"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Grid>

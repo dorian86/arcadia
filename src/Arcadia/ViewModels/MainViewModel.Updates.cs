@@ -52,7 +52,9 @@ public partial class MainViewModel
             if (silent)
             {
                 if (Settings.SkippedUpdate == latest.Tag) return;
-                ShowToast($"Arcadia {latest.Version} est disponible", ToastKind.Info, "Voir", () => ShowUpdate(latest), seconds: 12);
+                // the patch notes open by themselves, unless the user is busy (another window, TV mode, a game running)
+                if (Dialogs.Count == 0 && !IsTvMode && !Library.Games.Any(g => g.IsRunning)) ShowUpdate(latest);
+                else ShowToast($"Arcadia {latest.Version} est disponible", ToastKind.Info, "Voir les nouveautés", () => ShowUpdate(latest), seconds: 15);
             }
             else ShowUpdate(latest);
         }
@@ -73,6 +75,30 @@ public partial class MainViewModel
     public void AnnounceUpdated() =>
         ShowToast($"Arcadia a été mis à jour en version {UpdateService.Current}", ToastKind.Success, seconds: 8);
 
+    /// <summary>
+    /// First start of a newer version (updated by Arcadia or by hand): shows its patch notes once ("Quoi de neuf").
+    /// The version is remembered at every start.
+    /// </summary>
+    public async Task ShowWhatsNewAsync()
+    {
+        var current = UpdateService.Current;
+        var last = Settings.LastRunVersion;
+        if (last != current.ToString())
+        {
+            Settings.LastRunVersion = current.ToString();
+            SaveSettings();
+        }
+        if (!UpdateService.IsPublishedBuild || last == null || !UpdateService.TryParseVersion(last, out var previous) || previous >= current) return;
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            var notes = await UpdateService.GetNotesAsync(previous, current);
+            if (string.IsNullOrWhiteSpace(notes) || Dialogs.Count > 0 || IsTvMode) return;
+            Dialogs.Add(UpdateDialogViewModel.WhatsNew(this, current, notes));
+        }
+        catch (Exception ex) { Log.Warn($"Patch notes unavailable: {ex.Message}"); }
+    }
+
     /// <summary>Quits so that the new version (already started) can take over.</summary>
     internal void ShutdownForUpdate()
     {
@@ -91,12 +117,42 @@ public partial class UpdateDialogViewModel : ObservableObject
     {
         _main = main;
         Release = release;
+        _notes = string.IsNullOrWhiteSpace(release.Notes) ? "Pas de notes pour cette version." : release.Notes.Trim();
+        _ = LoadSkippedNotesAsync();
     }
 
+    private UpdateDialogViewModel(MainViewModel main, ReleaseInfo release, string notes)
+    {
+        _main = main;
+        Release = release;
+        IsWhatsNew = true;
+        _notes = notes;
+    }
+
+    /// <summary>"Quoi de neuf": the notes of the version just installed, with a single "OK" button.</summary>
+    public static UpdateDialogViewModel WhatsNew(MainViewModel main, Version version, string notes) =>
+        new(main, new ReleaseInfo(version, "v" + version, "", notes, null, 0, ""), notes);
+
     public ReleaseInfo Release { get; }
-    public string Title => $"Arcadia {Release.Version} est disponible";
-    public string Subtitle => $"Vous utilisez la version {UpdateService.Current}. Votre bibliothèque et vos réglages sont conservés.";
-    public string Notes => string.IsNullOrWhiteSpace(Release.Notes) ? "Pas de notes pour cette version." : Release.Notes.Trim();
+    public bool IsWhatsNew { get; }
+    public bool IsOffer => !IsWhatsNew;
+    public string Title => IsWhatsNew ? $"Quoi de neuf dans Arcadia {Release.Version}" : $"Arcadia {Release.Version} est disponible";
+    public string Subtitle => IsWhatsNew
+        ? "Arcadia vient d'être mis à jour. Voici ce qui change."
+        : $"Vous utilisez la version {UpdateService.Current}. Votre bibliothèque et vos réglages sont conservés.";
+    /// <summary>Patch notes (light Markdown: "#" titles, "-" lists, **bold**).</summary>
+    [ObservableProperty] private string _notes;
+
+    /// <summary>Versions published in between (the user skipped some): their notes are shown too.</summary>
+    private async Task LoadSkippedNotesAsync()
+    {
+        try
+        {
+            var all = await UpdateService.GetNotesAsync(UpdateService.Current, Release.Version);
+            if (!string.IsNullOrWhiteSpace(all)) Notes = all;
+        }
+        catch (Exception ex) { Log.Warn($"Notes of skipped versions unavailable: {ex.Message}"); }
+    }
     public bool CanInstallHere => UpdateService.IsPublishedBuild && Release.DownloadUrl != null;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsIdle))] private bool _isDownloading;

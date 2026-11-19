@@ -121,7 +121,9 @@ public sealed partial class ImportService
         {
             if (d.SteamAppId != null && g.SteamAppId == d.SteamAppId) return true;
             if (d.StoreId != null && string.Equals(g.StoreId, d.StoreId, StringComparison.OrdinalIgnoreCase)) return true;
-            if (string.Equals(g.LaunchTarget, d.LaunchTarget, StringComparison.OrdinalIgnoreCase)) return true;
+            // same target and arguments (Battle.net / Riot games all start through their launcher, with different arguments)
+            if (string.Equals(g.LaunchTarget, d.LaunchTarget, StringComparison.OrdinalIgnoreCase)
+                && string.Equals((g.Arguments ?? "").Trim(), (d.Arguments ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) return true;
             if (d.Executable != null && string.Equals(g.TargetPath ?? g.LaunchTarget, d.Executable, StringComparison.OrdinalIgnoreCase)) return true;
             if (d.InstallDir != null && g.TargetPath != null && g.TargetPath.StartsWith(d.InstallDir.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)) return true;
             if (NameMatcher.Compact(g.Name) == NameMatcher.Compact(d.Name) && (g.Store == d.Store || g.SourceKind == GameSourceKind.Shortcut && string.IsNullOrWhiteSpace(g.TargetPath))) return true;

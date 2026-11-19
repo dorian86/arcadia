@@ -58,7 +58,17 @@ public sealed class GameLauncher
             game.LastPlayedAt = started;
             game.PlayCount++;
             Log.Info($"Launched '{game.Name}' -> {target} {game.Arguments}");
-            _ = TrackSessionAsync(game, process, started, ResolveInstallDir(game));
+            var installDir = ResolveInstallDir(game);
+            // started through a launcher outside the game folder (Battle.net, Riot Client…): the launcher stays open,
+            // so the play time follows the game's own processes instead
+            if (process != null && installDir != null && !LaunchHelper.IsUri(target)
+                && !Path.GetFullPath(target).StartsWith(installDir.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)
+                && game.Store is GameStore.BattleNet or GameStore.Riot or GameStore.EA)
+            {
+                process.Dispose();
+                process = null;
+            }
+            _ = TrackSessionAsync(game, process, started, installDir);
             return new LaunchResult(LaunchOutcome.Started);
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)

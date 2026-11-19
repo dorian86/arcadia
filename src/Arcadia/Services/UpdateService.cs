@@ -65,6 +65,35 @@ public static class UpdateService
         return ParseRelease(await response.Content.ReadAsStringAsync(ct));
     }
 
+    /// <summary>
+    /// Patch notes of every published version newer than <paramref name="since"/> up to <paramref name="upTo"/>
+    /// (newest first), so that someone who skipped a version still sees what changed. Null when unavailable.
+    /// </summary>
+    public static async Task<string?> GetNotesAsync(Version since, Version upTo, CancellationToken ct = default)
+    {
+        if (TestFeed != null || Repository is not { } repo) return null;
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repo}/releases?per_page=30");
+        request.Headers.Accept.ParseAdd("application/vnd.github+json");
+        using var response = await Http.Client.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode) return null;
+        return CombineNotes(await response.Content.ReadAsStringAsync(ct), since, upTo);
+    }
+
+    /// <summary>Joins the notes of the releases in (since, upTo], one "## Arcadia x.y.z" title per version.</summary>
+    internal static string? CombineNotes(string releasesJson, Version since, Version upTo)
+    {
+        using var doc = JsonDocument.Parse(releasesJson);
+        if (doc.RootElement.ValueKind != JsonValueKind.Array) return null;
+        var releases = doc.RootElement.EnumerateArray()
+            .Select(r => ParseRelease(r.GetRawText()))
+            .Where(r => r != null && r.Version > since && r.Version <= upTo)
+            .OrderByDescending(r => r!.Version)
+            .ToList();
+        if (releases.Count == 0) return null;
+        if (releases.Count == 1) return releases[0]!.Notes.Trim();
+        return string.Join("\n\n", releases.Select(r => $"# Arcadia {r!.Version}\n\n{r.Notes.Trim()}"));
+    }
+
     /// <summary>Reads the GitHub "release" JSON. Tags look like "v1.2.0" (or "1.2").</summary>
     internal static ReleaseInfo? ParseRelease(string json)
     {

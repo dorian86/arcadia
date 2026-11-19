@@ -23,9 +23,13 @@ public partial class AppSettings : ObservableObject
 
     // ---- Updates ----
     [ObservableProperty] private bool _autoCheckUpdates = true;
+    /// <summary>Measure the play time of library games started outside Arcadia (Steam, Epic, EA app, shortcuts…).</summary>
+    [ObservableProperty] private bool _trackOutsidePlaytime = true;
 
     /// <summary>A version the user chose to skip ("Ignorer cette version").</summary>
     [ObservableProperty] private string? _skippedUpdate;
+    /// <summary>Version of Arcadia at the last start: a newer one shows its patch notes once ("Quoi de neuf").</summary>
+    [ObservableProperty] private string? _lastRunVersion;
 
     /// <summary>Tint the background with the colours of the selected game's cover.</summary>
     [ObservableProperty] private bool _dynamicColors = true;

@@ -24,10 +24,11 @@ Un seul fichier, rien à installer à côté.
 
 Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, des émulateurs et un dossier plein de raccourcis sur le bureau ? Arcadia les rassemble au même endroit :
 
-- 🔍 **Détection automatique** des jeux installés : Steam, Epic Games, GOG, Ubisoft Connect et Xbox / Game Pass. Pour le reste, glissez simplement vos raccourcis ou vos `.exe` dans la fenêtre.
+- 🔍 **Détection automatique** des jeux installés : Steam, Epic Games, GOG, Ubisoft Connect, Xbox / Game Pass, EA app, Battle.net et Riot Games. Pour le reste, glissez simplement vos raccourcis ou vos `.exe` dans la fenêtre.
 - 📂 **Recherche dans un dossier** : donnez-lui votre dossier « Jeux », même en désordre. Arcadia trouve le bon `.exe` de chaque jeu (Unity, Unreal, GameMaker, Godot, Ren'Py…) et laisse de côté les logiciels, les installeurs et les outils.
 - 🖼️ **Jaquettes, illustrations et logos** trouvés tout seuls, avec le vrai nom de chaque jeu, même à partir d'un raccourci nommé `GTA5.exe - Raccourci`.
-- ⏱️ **Temps de jeu**, y compris pour les jeux Steam et Epic, et reprise de votre historique Steam.
+- ⏱️ **Temps de jeu sur toutes les plateformes** : mesuré par Arcadia, même pour les jeux lancés depuis Steam, Epic, l'EA app, Battle.net ou un raccourci, et reprise de votre historique Steam.
+- 📊 **En ce moment sur Steam** dans la fiche : joueurs en ligne, prix et promo, Metacritic, avec des liens vers SteamDB et HowLongToBeat.
 - 📰 **Actualités** de chaque jeu dans sa fiche : les dernières annonces officielles (mises à jour, événements).
 - 🏅 **Trophées Arcadia** pour tous vos jeux (temps de jeu, jeux terminés, séries de jours…) et **« Ton année de jeu »**, le récap de votre année : jeu de l'année, top 5, mois par mois, records.
 - 🏆 **Succès** : ceux de vos jeux Steam s'affichent et se synchronisent tout seuls (lus sur votre PC, même hors ligne). Pour vos jeux lancés en `.exe` ou par raccourci, Arcadia récupère la liste officielle (en français, avec icônes et rareté) et vous cochez ceux que vous avez obtenus.

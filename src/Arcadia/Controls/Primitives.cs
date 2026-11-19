@@ -141,6 +141,23 @@ public static class GameMenu
     {
         if (Application.Current.TryFindResource("GameContextMenu") is not ContextMenu menu) return;
         menu.DataContext = target.DataContext;
+        var main = Arcadia.ViewModels.MainViewModel.Instance;
+        if (target.DataContext is Arcadia.Models.Game game && main != null)
+        {
+            var several = game.IsSelected && main.SelectedCount > 1;
+            foreach (var item in menu.Items.OfType<MenuItem>())
+            {
+                switch (item.Tag as string)
+                {
+                    case "detail": // already on this game's page
+                        item.Visibility = main.DetailGame == game ? Visibility.Collapsed : Visibility.Visible;
+                        break;
+                    case "remove": // right-click on one of several selected games acts on all of them
+                        item.Header = several ? $"Retirer les {main.SelectedCount} jeux sélectionnés" : "Retirer de la bibliothèque";
+                        break;
+                }
+            }
+        }
         menu.PlacementTarget = target;
         menu.Placement = placement;
         menu.IsOpen = true;

@@ -25,7 +25,19 @@ public partial class MainViewModel
         _ = LookUpMissingAchievementsAsync();
         _ = StartTrophiesAsync();
         _ = CheckForUpdatesOnStartupAsync();
+
+        // play time of the games started outside Arcadia (Steam, Epic, EA app, Battle.net, shortcuts…)
+        _backgroundPlaytime = new BackgroundPlaytime(() => Library.Games.ToList(), () => Library.ScheduleSave())
+        {
+            Enabled = Settings.TrackOutsidePlaytime,
+        };
+        Settings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AppSettings.TrackOutsidePlaytime)) _backgroundPlaytime.Enabled = Settings.TrackOutsidePlaytime;
+        };
     }
+
+    private BackgroundPlaytime? _backgroundPlaytime;
 
     // ------------------------------------------------------------------------------------
     // Tiles of the console themes
