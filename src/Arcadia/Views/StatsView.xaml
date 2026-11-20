@@ -55,6 +55,8 @@
                         <StackPanel>
                             <TextBlock Text="TEMPS DE JEU TOTAL" Style="{StaticResource Overline}"/>
                             <TextBlock Text="{Binding TotalTime}" Style="{StaticResource Kpi}"/>
+                            <TextBlock Text="{Binding TotalTimeHint}" FontSize="12" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                       Visibility="{Binding TotalTimeHint, Converter={StaticResource NullToVis}}"/>
                         </StackPanel>
                     </Grid>
                 </Border>

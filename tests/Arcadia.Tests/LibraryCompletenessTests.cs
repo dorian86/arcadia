@@ -74,6 +74,25 @@ public class DuplicateTests
     }
 }
 
+public class StatsWithNotInstalledTests
+{
+    [Fact]
+    public void TheHoursOfGamesNotInstalledCountInTheStatistics()
+    {
+        var installed = new Game { Name = "Balatro", LaunchTarget = "steam://rungameid/2379780", PlayTimeSeconds = 4 * 3600 };
+        var notInstalled = new Game { Name = "Sea of Thieves", LaunchTarget = "steam://rungameid/1172620", PlayTimeSeconds = 51 * 3600, IsNotInstalled = true };
+        var hidden = new Game { Name = "Caché", LaunchTarget = "x.exe", PlayTimeSeconds = 99 * 3600, IsNotInstalled = true, IsHidden = true };
+
+        var stats = new Arcadia.ViewModels.StatsViewModel(new List<Game> { installed, notInstalled, hidden });
+
+        Assert.Equal(Format.Duration(55 * 3600), stats.TotalTime);
+        Assert.Equal($"dont {Format.Duration(51 * 3600)} sur des jeux non installés", stats.TotalTimeHint);
+        Assert.Same(notInstalled, stats.MostPlayed);
+        Assert.Equal(2, stats.TopGames.Count);
+        Assert.Equal("1", stats.GameCount); // the games themselves stay apart
+    }
+}
+
 public class OwnedGamesTests
 {
     [Fact]

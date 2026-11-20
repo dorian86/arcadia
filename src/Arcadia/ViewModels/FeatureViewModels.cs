@@ -403,19 +403,24 @@ public sealed class StatsViewModel
             .Where(x => x.n > 0)
             .Select(x => $"{x.n} {x.tier switch { TrophyTier.Bronze => "bronze", TrophyTier.Argent => "argent", TrophyTier.Or => "or", _ => "platine" }}"));
         var visible = games.Where(g => g.IsShown).ToList();
-        var total = visible.Sum(g => g.PlayTimeSeconds);
+        // the hours of the games not installed (kept by Steam / Epic) count in the totals and the most played
+        var notInstalled = games.Where(g => g.IsNotInstalled && !g.IsHidden).ToList();
+        var withHours = visible.Concat(notInstalled).ToList();
+        var outside = notInstalled.Sum(g => g.PlayTimeSeconds);
+        var total = visible.Sum(g => g.PlayTimeSeconds) + outside;
         var sessions = visible.SelectMany(g => g.Sessions).ToList();
         TotalTime = total > 0 ? Format.Duration(total) : "0 h";
+        TotalTimeHint = outside >= 3600 ? $"dont {Format.Duration(outside)} sur des jeux non installés" : null;
         GameCount = visible.Count.ToString(CultureInfo.CurrentCulture);
         PlayedCount = $"{visible.Count(g => g.LastPlayedAt != null)} / {visible.Count}";
         SessionCount = Math.Max(sessions.Count, visible.Sum(g => g.PlayCount)).ToString(CultureInfo.CurrentCulture);
         AverageSession = sessions.Count > 0 ? Format.Duration((long)sessions.Average(s => s.Seconds)) : "—";
-        var top = visible.Where(g => g.PlayTimeSeconds > 0).OrderByDescending(g => g.PlayTimeSeconds).Take(8).ToList();
+        var top = withHours.Where(g => g.PlayTimeSeconds > 0).OrderByDescending(g => g.PlayTimeSeconds).Take(8).ToList();
         MostPlayed = top.FirstOrDefault();
         var max = Math.Max(1, top.FirstOrDefault()?.PlayTimeSeconds ?? 1);
         TopGames = top.Select(g => new BarItem
         {
-            Label = g.Name, Value = Format.Duration(g.PlayTimeSeconds), Ratio = (double)g.PlayTimeSeconds / max, Game = g,
+            Label = g.IsNotInstalled ? $"{g.Name}  (non installé)" : g.Name, Value = Format.Duration(g.PlayTimeSeconds), Ratio = (double)g.PlayTimeSeconds / max, Game = g,
         }).ToList();
 
         // last 12 weeks (Monday-based)
@@ -442,6 +447,8 @@ public sealed class StatsViewModel
     }
 
     public string TotalTime { get; }
+    /// <summary>"dont 482 h sur des jeux non installés" (null when there are none).</summary>
+    public string? TotalTimeHint { get; }
     public string GameCount { get; }
     public string PlayedCount { get; }
     public string SessionCount { get; }
