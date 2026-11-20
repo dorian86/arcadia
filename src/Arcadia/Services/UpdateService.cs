@@ -187,7 +187,9 @@ public static class UpdateService
         var old = current + ".old";
         try
         {
-            if (File.Exists(old)) File.Delete(old);
+            // an "Arcadia.exe.old" can still be running (e.g. renamed while open): use another name, cleaned up later
+            try { if (File.Exists(old)) File.Delete(old); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { old = $"{current}.{DateTime.Now:yyyyMMddHHmmss}.old"; }
             File.Move(current, old);
         }
         catch (Exception ex)
@@ -214,8 +216,14 @@ public static class UpdateService
     public static void DeleteLeftover()
     {
         if (Environment.ProcessPath is not { } current || !IsPublishedBuild) return;
-        try { if (File.Exists(current + ".old")) File.Delete(current + ".old"); }
-        catch { /* still running: next launch */ }
+        var dir = Path.GetDirectoryName(current);
+        if (dir == null) return;
+        // "Arcadia.exe.old" and "Arcadia.exe.<date>.old"
+        foreach (var file in Directory.EnumerateFiles(dir, Path.GetFileName(current) + "*.old"))
+        {
+            try { File.Delete(file); }
+            catch { /* still running: next launch */ }
+        }
     }
 
     /// <summary>Started by the update: wait for the old process to quit, then clean up behind it.</summary>

@@ -37,7 +37,8 @@ public static partial class MarkdownLite
         {
             if (string.IsNullOrWhiteSpace(raw)) continue;
             var indent = raw.Length - raw.TrimStart().Length;
-            var line = raw.Trim();
+            var line = StripEmoji(raw).Trim();
+            if (line.Length == 0) continue;
             if (line.StartsWith("# ")) blocks.Add(new Block(Kind.Title, line[2..].Trim()));
             else if (line.StartsWith("##")) blocks.Add(new Block(Kind.Subtitle, line.TrimStart('#').Trim()));
             else if (line.StartsWith("- ") || line.StartsWith("* ")) blocks.Add(new Block(Kind.Bullet, line[2..].Trim(), indent >= 2 ? 1 : 0));
@@ -46,6 +47,25 @@ public static partial class MarkdownLite
             else blocks.Add(new Block(Kind.Paragraph, line));
         }
         return blocks;
+    }
+
+    /// <summary>
+    /// Removes emoji (WPF draws them in one colour, often as odd shapes): pictographs outside the basic plane,
+    /// symbols such as ⏱ ✨ ⚡, joiners and variation selectors. Arrows, accents and punctuation are kept.
+    /// </summary>
+    internal static string StripEmoji(string s)
+    {
+        var sb = new System.Text.StringBuilder(s.Length);
+        for (var i = 0; i < s.Length; i++)
+        {
+            var c = s[i];
+            if (char.IsHighSurrogate(c) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1])) { i++; continue; }
+            if (c is '️' or '︎' or '‍' or '⃣') continue;
+            if (c >= '⌀' && c <= '⏿' || c >= '☀' && c <= '➿' || c >= '⬀' && c <= '⯿') continue;
+            sb.Append(c);
+        }
+        // "- 📚 **Titre**" → "- **Titre**", not "-  **Titre**"
+        return Regex.Replace(sb.ToString(), "(?<=\\S) {2,}", " ");
     }
 
     private static UIElement Render(FrameworkElement owner, Block block)
@@ -93,17 +113,33 @@ public static partial class MarkdownLite
 
     private static void AddInlines(InlineCollection inlines, string text, Brush strong)
     {
+        foreach (var (part, style) in Spans(text))
+            inlines.Add(style switch
+            {
+                "b" => new Run(part) { FontWeight = FontWeights.SemiBold, Foreground = strong },
+                "i" => new Run(part) { FontStyle = FontStyles.Italic, Foreground = strong },
+                "c" => new Run(part) { FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12 },
+                _ => new Run(part),
+            });
+    }
+
+    /// <summary>**bold**, *italic* (not a lone "*"), `code`.</summary>
+    [GeneratedRegex(@"\*\*(?<b>.+?)\*\*|(?<!\*)\*(?<i>[^*\s][^*]*?)\*(?!\*)|`(?<c>[^`]+)`")]
+    private static partial Regex Inline();
+
+    /// <summary>The pieces of a line: (text, "b" / "i" / "c" / "" for plain).</summary>
+    internal static List<(string Text, string Style)> Spans(string text)
+    {
+        var list = new List<(string, string)>();
         var at = 0;
         foreach (Match m in Inline().Matches(text))
         {
-            if (m.Index > at) inlines.Add(new Run(text[at..m.Index]));
-            if (m.Groups["b"].Success) inlines.Add(new Run(m.Groups["b"].Value) { FontWeight = FontWeights.SemiBold, Foreground = strong });
-            else inlines.Add(new Run(m.Groups["c"].Value) { FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12 });
+            if (m.Index > at) list.Add((text[at..m.Index], ""));
+            var style = m.Groups["b"].Success ? "b" : m.Groups["i"].Success ? "i" : "c";
+            list.Add((m.Groups[style].Value, style));
             at = m.Index + m.Length;
         }
-        if (at < text.Length) inlines.Add(new Run(text[at..]));
+        if (at < text.Length) list.Add((text[at..], ""));
+        return list;
     }
-
-    [GeneratedRegex(@"\*\*(?<b>.+?)\*\*|`(?<c>[^`]+)`")]
-    private static partial Regex Inline();
 }

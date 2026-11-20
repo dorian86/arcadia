@@ -330,8 +330,9 @@ public partial class App : Application
         // --dialog whatsnew: the "Quoi de neuf" window with sample notes (layout check)
         if (o.Dialog == "whatsnew")
             vm.Dialogs.Add(UpdateDialogViewModel.WhatsNew(vm, UpdateService.Current,
-                "# Arcadia 1.1.7\n\n## Nouveautés\n\n- **Barre de sélection** sur l'accueil\n- Filtre **Jeux introuvables**\n  - avec le nombre de jeux\n\n"
-                + "# Arcadia 1.1.6\n\n- 📂 **Recherche des jeux dans un dossier** : `Chercher dans un dossier…`"));
+                Environment.GetEnvironmentVariable("ARCADIA_NOTES_FILE") is { } notesFile && File.Exists(notesFile) ? File.ReadAllText(notesFile)
+                : "# Arcadia 1.1.7\n\n## Nouveautés\n\n- **Barre de sélection** sur l'accueil\n- Filtre **Jeux introuvables**\n  - avec le nombre de jeux\n\n"
+                  + "# Arcadia 1.1.6\n\n- 📂 **Recherche des jeux dans un dossier** : `Chercher dans un dossier…`"));
         // --select n: the first n games are selected (multi-selection bar)
         foreach (var g in vm.Library.Games.OrderByDescending(g => g.LastPlayedAt).Take(o.Select)) g.IsSelected = true;
         var first = vm.DetailGame ?? vm.VisibleGames.FirstOrDefault() ?? vm.Library.Games.FirstOrDefault();

@@ -15,12 +15,14 @@ if (Test-Path $out) {
     if (Test-Path $exeOut) {
         try { Remove-Item $exeOut -Force }
         catch {
-            Remove-Item "$exeOut.old" -Force -ErrorAction SilentlyContinue
-            Rename-Item $exeOut "Arcadia.exe.old"
-            Write-Host "Arcadia.exe est en cours d'exécution : renommé en Arcadia.exe.old" -ForegroundColor Yellow
+            # several copies may be open: "Arcadia.exe.old" can itself still be running
+            Get-ChildItem $out -Filter "Arcadia.exe*.old" | ForEach-Object { Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue }
+            $name = if (Test-Path "$exeOut.old") { "Arcadia.exe.$(Get-Date -Format yyyyMMddHHmmss).old" } else { "Arcadia.exe.old" }
+            Rename-Item $exeOut $name
+            Write-Host "Arcadia.exe est en cours d'exécution : renommé en $name" -ForegroundColor Yellow
         }
     }
-    Get-ChildItem $out -Exclude "Arcadia.exe.old" | Remove-Item -Recurse -Force
+    Get-ChildItem $out -Exclude "*.old" | Remove-Item -Recurse -Force
 }
 
 dotnet publish (Join-Path $root "src\Arcadia\Arcadia.csproj") -c Release -r $Runtime --self-contained true `

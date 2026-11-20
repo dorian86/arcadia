@@ -29,7 +29,7 @@
             <Border Grid.Row="1" Margin="30,22,30,0" CornerRadius="12" Background="{StaticResource Surface2}" BorderBrush="{StaticResource Stroke}" BorderThickness="1">
                 <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto" c:SmoothScroll.IsEnabled="True" Padding="18,14">
                     <StackPanel>
-                        <TextBlock Text="NOUVEAUTÉS" Style="{StaticResource Overline}" Margin="0,0,0,4"/>
+                        <TextBlock Text="NOUVEAUTÉS" Style="{StaticResource Overline}" Margin="0,0,0,4" Visibility="{Binding ShowOverline, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel c:MarkdownLite.Text="{Binding Notes}"/>
                     </StackPanel>
                 </ScrollViewer>

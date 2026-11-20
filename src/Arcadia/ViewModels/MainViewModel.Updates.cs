@@ -141,7 +141,9 @@ public partial class UpdateDialogViewModel : ObservableObject
         ? "Arcadia vient d'être mis à jour. Voici ce qui change."
         : $"Vous utilisez la version {UpdateService.Current}. Votre bibliothèque et vos réglages sont conservés.";
     /// <summary>Patch notes (light Markdown: "#" titles, "-" lists, **bold**).</summary>
-    [ObservableProperty] private string _notes;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowOverline))] private string _notes;
+    /// <summary>The "NOUVEAUTÉS" label, unless the notes start with their own heading.</summary>
+    public bool ShowOverline => !Notes.TrimStart().StartsWith('#');
 
     /// <summary>Versions published in between (the user skipped some): their notes are shown too.</summary>
     private async Task LoadSkippedNotesAsync()

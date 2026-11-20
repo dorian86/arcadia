@@ -33,6 +33,19 @@ public class PatchNotesTests
         Assert.Equal("## Nouveauté\n\n- Sixième", UpdateService.CombineNotes(Releases, new Version(1, 1, 5), new Version(1, 1, 6)));
 
     [Fact]
+    public void ItalicsAndEmojisInReleaseNotes()
+    {
+        var blocks = MarkdownLite.Parse("- 📚 **Toute votre bibliothèque** : dans *Tous les jeux → Non installés*.\n- ⏱️ Temps\n- 🧹 ✨ **Doublons**");
+        Assert.Equal("**Toute votre bibliothèque** : dans *Tous les jeux → Non installés*.", blocks[0].Text);
+        Assert.Equal("Temps", blocks[1].Text);
+        Assert.Equal("**Doublons**", blocks[2].Text);
+        var spans = MarkdownLite.Spans(blocks[0].Text);
+        Assert.Contains(("Toute votre bibliothèque", "b"), spans);
+        Assert.Contains(("Tous les jeux → Non installés", "i"), spans);
+        Assert.DoesNotContain(spans, s => s.Text.Contains('*'));
+    }
+
+    [Fact]
     public void ReadsLightMarkdown()
     {
         var blocks = MarkdownLite.Parse("# Arcadia 1.2\n\n## Nouveautés\n\n- **Gras** et `code`\n  - sous-point\n  suite du sous-point\nTexte");
