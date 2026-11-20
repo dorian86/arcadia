@@ -26,6 +26,8 @@ Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, d
 
 - 🔍 **Détection automatique** des jeux installés : Steam, Epic Games, GOG, Ubisoft Connect, Xbox / Game Pass, EA app, Battle.net et Riot Games. Pour le reste, glissez simplement vos raccourcis ou vos `.exe` dans la fenêtre.
 - 📂 **Recherche dans un dossier** : donnez-lui votre dossier « Jeux », même en désordre. Arcadia trouve le bon `.exe` de chaque jeu (Unity, Unreal, GameMaker, Godot, Ren'Py…) et laisse de côté les logiciels, les installeurs et les outils.
+- 📚 **Toute votre bibliothèque, même non installée** : les jeux de vos bibliothèques Steam (famille comprise) et Epic Games que vous n'avez pas installés, avec leurs heures de jeu, rangés à part dans *Tous les jeux → Non installés*. Ils rejoignent les autres dès que vous les installez.
+- 🧹 **Jeux en double** détectés (deux dossiers, un raccourci et le launcher…) et fusionnés en un clic, sans perdre le temps de jeu.
 - 🖼️ **Jaquettes, illustrations et logos** trouvés tout seuls, avec le vrai nom de chaque jeu, même à partir d'un raccourci nommé `GTA5.exe - Raccourci`.
 - ⏱️ **Temps de jeu sur toutes les plateformes** : mesuré par Arcadia, même pour les jeux lancés depuis Steam, Epic, l'EA app, Battle.net ou un raccourci, et reprise de votre historique Steam.
 - 📊 **En ce moment sur Steam** dans la fiche : joueurs en ligne, prix et promo, Metacritic, avec des liens vers SteamDB et HowLongToBeat.

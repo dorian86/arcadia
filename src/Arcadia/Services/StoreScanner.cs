@@ -75,6 +75,11 @@ public static partial class StoreScanner
         858280, 961940, 930400, 1054830, 1113280, 1245040, 1420170, 1580130, 1887720, 2348590, 2805730, 3658110,
     };
 
+    internal static bool IsSteamTool(int appId) => SteamTools.Contains(appId);
+
+    internal static bool IsSteamNonGameName(string name) =>
+        Regex.IsMatch(name, "Redistributable|Proton|Steam Linux Runtime|Steamworks|Dedicated Server|SDK$|Soundtrack|Playtest$|Test Server$", RegexOptions.IgnoreCase);
+
     public static IEnumerable<string> SteamLibraries()
     {
         var root = SteamRoot();
@@ -113,7 +118,7 @@ public static partial class StoreScanner
                 var name = AcfField(text, "name");
                 var dir = AcfField(text, "installdir");
                 if (!int.TryParse(id, out var appId) || name == null || dir == null || SteamTools.Contains(appId)) continue;
-                if (Regex.IsMatch(name, "Redistributable|Proton|Steam Linux Runtime|Steamworks|Dedicated Server|SDK$|Soundtrack", RegexOptions.IgnoreCase)) continue;
+                if (IsSteamNonGameName(name)) continue;
                 yield return new DetectedGame
                 {
                     Name = NameCleaner.CleanOfficialName(name),
@@ -158,6 +163,8 @@ public static partial class StoreScanner
     /// Epic Games: the classic launcher's manifests, the new launcher's journal (2026), then games left by the
     /// classic launcher in the Epic folders (".egstore") that the new one has not taken over.
     /// </summary>
+    internal static List<DetectedGame> ScanEpicInstalled() => ScanEpic().ToList();
+
     private static IEnumerable<DetectedGame> ScanEpic()
     {
         var found = ScanEpicLegacy().ToList();

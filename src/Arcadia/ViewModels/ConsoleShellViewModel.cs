@@ -96,7 +96,7 @@ public partial class ConsoleShellViewModel : ObservableObject
 
     public void Rebuild(bool force = false)
     {
-        var all = _main.Library.Games.Where(g => !g.IsHidden).ToList();
+        var all = _main.Library.Games.Where(g => g.IsShown).ToList();
         var byName = all.OrderBy(g => g.Name, MainViewModel.NameComparer).ToList();
         var list = new List<ShellCategory>
         {

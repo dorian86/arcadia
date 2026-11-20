@@ -61,7 +61,7 @@ public partial class MainViewModel
 
     /// <summary>Identified (or given up on), eligible and never looked up.</summary>
     private static bool NeedsAchievements(Game g) =>
-        g.CanHaveAchievements && g.Achievements == null && g.MetadataState != MetadataState.Pending;
+        g.CanHaveAchievements && !g.IsNotInstalled && g.Achievements == null && g.MetadataState != MetadataState.Pending;
 
     /// <summary>Called by <see cref="OnGameChanged"/>: a new game finished its identification, or its Steam match changed.</summary>
     private void OnGameChangedForAchievements(Game game, string? property)

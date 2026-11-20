@@ -195,7 +195,7 @@ public partial class RouletteViewModel : ObservableObject
 
     private List<Game> Pool()
     {
-        var games = _main.Library.Games.Where(g => !g.IsHidden && !g.IsMissing).ToList();
+        var games = _main.Library.Games.Where(g => g.IsShown && !g.IsMissing).ToList();
         return FilterIndex switch
         {
             1 => games.Where(g => g.LastPlayedAt == null && g.PlayTimeSeconds < 60).ToList(),

@@ -59,7 +59,7 @@ public partial class MainViewModel
     /// <summary>The banner currently shown ("Trophée obtenu"), null when none.</summary>
     [ObservableProperty] private TrophyItem? _trophyBanner;
 
-    private IReadOnlyCollection<Game> TrophyGames => Library.Games.Where(g => !g.IsHidden).ToList();
+    private IReadOnlyCollection<Game> TrophyGames => Library.Games.Where(g => g.IsShown).ToList();
 
     /// <summary>First check a little after startup (Steam play time and identification have run by then).</summary>
     private async Task StartTrophiesAsync()

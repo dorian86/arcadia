@@ -30,7 +30,7 @@ public sealed class YearRecap
         var now = today ?? DateTime.Now;
         var from = new DateTime(year, 1, 1);
         var to = year == now.Year ? now.Date : new DateTime(year, 12, 31);
-        var list = games.Where(g => !g.IsHidden).ToList();
+        var list = games.Where(g => g.IsShown).ToList();
         var sessions = list.SelectMany(g => g.Sessions.Where(s => s.Start.Year == year && s.Seconds > 0).Select(s => (Game: g, Session: s))).ToList();
 
         var months = new long[12];

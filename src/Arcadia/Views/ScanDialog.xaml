@@ -60,6 +60,11 @@
                                                                     Visibility="{Binding Note, Converter={StaticResource NullToVis}}" ToolTip="Ce qui montre que c'est un jeu">
                                                                 <TextBlock Text="{Binding Note}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                                                             </Border>
+                                                            <Border CornerRadius="7" Padding="9,3" Background="{StaticResource WarningSoft}" VerticalAlignment="Center" Margin="8,0,0,0"
+                                                                    Visibility="{Binding IsDuplicate, Converter={StaticResource BoolToVis}}"
+                                                                    ToolTip="Un jeu du même nom est déjà dans Arcadia ou dans un autre dossier : il n'est pas coché pour ne pas l'ajouter deux fois.">
+                                                                <TextBlock Text="En double ?" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Warning}"/>
+                                                            </Border>
                                                             <Border CornerRadius="7" Padding="9,3" Background="#263DDC97" VerticalAlignment="Center" Margin="8,0,0,0"
                                                                     Visibility="{Binding InLibrary, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock Text="Déjà dans Arcadia" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Success}"/>

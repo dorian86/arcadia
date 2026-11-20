@@ -14,13 +14,14 @@ public sealed record LauncherCount(string Label, string Glyph, int Count);
 /// </summary>
 public partial class OnboardingViewModel : ObservableObject
 {
-    public const int StepCount = 4;
+    public const int StepCount = 5;
     private readonly MainViewModel _main;
     private List<DetectedGame> _found = new();
 
     public OnboardingViewModel(MainViewModel main)
     {
         _main = main;
+        _keyAtStart = main.Settings.SteamGridDbApiKey;
         Themes = ConsoleTheme.All.Select(t => new ThemeChoice { Theme = t, IsCurrent = t.Key == main.CurrentTheme.Key }).ToList();
         _ = ScanAsync(); // ready by the time the player reaches step 2
     }
@@ -28,13 +29,14 @@ public partial class OnboardingViewModel : ObservableObject
     public MainViewModel Main => _main;
 
     // ---- steps ----
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsWelcome), nameof(IsGames), nameof(IsTheme), nameof(IsLook), nameof(IsLast), nameof(StepText), nameof(CanGoBack))]
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsWelcome), nameof(IsGames), nameof(IsCovers), nameof(IsTheme), nameof(IsLook), nameof(IsLast), nameof(StepText), nameof(CanGoBack))]
     private int _step;
 
     public bool IsWelcome => Step == 0;
     public bool IsGames => Step == 1;
-    public bool IsTheme => Step == 2;
-    public bool IsLook => Step == 3;
+    public bool IsCovers => Step == 2;
+    public bool IsTheme => Step == 3;
+    public bool IsLook => Step == 4;
     public bool IsLast => Step == StepCount - 1;
     public bool CanGoBack => Step > 0;
     public string StepText => $"Étape {Step + 1} sur {StepCount}";
@@ -73,6 +75,8 @@ public partial class OnboardingViewModel : ObservableObject
         if (theme != null && theme.Key != _main.CurrentTheme.Key) _main.ApplyUiTheme(theme.Key);
         else _main.Sound.Play(Sfx.Open);
         _main.ShowToast(_main.AllCount > 0 ? "C'est parti ! Bon jeu 🎮" : "C'est parti ! Glissez vos jeux dans la fenêtre pour les ajouter.", ToastKind.Success);
+        // a key added here: the games already added without an official cover get another chance
+        if (HasGridKey && string.IsNullOrWhiteSpace(_keyAtStart) && _main.MissingArtCount > 0) _main.RetryMissingArtCommand.Execute(null);
     }
 
     // ---- step 2: games found in the launchers ----
@@ -127,7 +131,25 @@ public partial class OnboardingViewModel : ObservableObject
         finally { IsImporting = false; }
     }
 
-    // ---- step 3: interface ----
+    // ---- step 3: covers (SteamGridDB key) ----
+    private readonly string? _keyAtStart;
+    public bool HasGridKey => !string.IsNullOrWhiteSpace(_main.Settings.SteamGridDbApiKey);
+    public string GridKey
+    {
+        get => _main.Settings.SteamGridDbApiKey ?? "";
+        set
+        {
+            _main.Settings.SteamGridDbApiKey = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            _main.SaveSettings();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasGridKey));
+        }
+    }
+
+    [RelayCommand]
+    private void OpenGridKeyPage() => _main.OpenUrlCommand.Execute("https://www.steamgriddb.com/profile/preferences/api");
+
+    // ---- step 4: interface ----
     public IReadOnlyList<ThemeChoice> Themes { get; }
 
     [RelayCommand]

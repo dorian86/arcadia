@@ -361,9 +361,35 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
                             <TextBlock Text="Détecter les jeux installés" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="Steam, Epic Games, GOG, Ubisoft Connect et application Xbox." Style="{StaticResource RowHint}"/>
+                            <TextBlock Text="Steam, Epic Games, GOG, Ubisoft Connect, Xbox, EA app, Battle.net et Riot Games." Style="{StaticResource RowHint}"/>
                         </StackPanel>
                         <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Analyser" c:Ui.Glyph="&#xE721;" Command="{Binding ScanPcCommand}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ImportOwnedGames}" Margin="0,0,16,0">
+                            <StackPanel>
+                                <TextBlock Text="Ajouter aussi les jeux non installés" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Les jeux de vos bibliothèques Steam (famille comprise) et Epic Games que vous n'avez pas installés, avec leurs heures de jeu. Ils restent à part, dans « Tous les jeux → Non installés », et rejoignent les autres dès qu'ils sont installés." Style="{StaticResource RowHint}"/>
+                            </StackPanel>
+                        </CheckBox>
+                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Synchroniser" c:Ui.Glyph="&#xE895;" Command="{Binding SyncOwnedGamesCommand}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                            <TextBlock Text="Jeux en double" Style="{StaticResource RowTitle}"/>
+                            <TextBlock Text="Le même jeu ajouté deux fois (deux dossiers, un raccourci et le launcher…) : fusionnez les entrées sans perdre le temps de jeu." Style="{StaticResource RowHint}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Rechercher" c:Ui.Glyph="&#xE8C8;" Command="{Binding ShowDuplicatesCommand}"/>
                     </Grid>
                     <Border Style="{StaticResource Divider}"/>
                     <Grid>

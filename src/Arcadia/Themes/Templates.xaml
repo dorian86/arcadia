@@ -217,6 +217,15 @@
                                             <TextBlock Text="En cours" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource Success}" Margin="6,0,0,0"/>
                                         </StackPanel>
                                     </Border>
+                                    <!-- in a launcher's library, not installed on this PC -->
+                                    <Border CornerRadius="7" Padding="7,3" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10"
+                                            Background="#E6141822" BorderThickness="1" BorderBrush="#40FFFFFF" IsHitTestVisible="False"
+                                            Visibility="{Binding IsNotInstalled, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE896;" Style="{StaticResource Glyph}" FontSize="9.5" Foreground="White"/>
+                                            <TextBlock Text="Non installé" FontSize="10.5" FontWeight="SemiBold" Foreground="White" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                     <Border x:Name="StatusBadge" CornerRadius="7" Padding="7,3" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10"
                                             Background="#E6141822" BorderThickness="1" BorderBrush="#40FFFFFF"
                                             Visibility="{Binding HasStatusBadge, Converter={StaticResource BoolToVis}}">
@@ -273,6 +282,10 @@
                         </Trigger>
                         <DataTrigger Binding="{Binding IsMissing}" Value="True">
                             <Setter TargetName="NewBadge" Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsNotInstalled}" Value="True">
+                            <Setter TargetName="NewBadge" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="PlayBtn" Property="ToolTip" Value="Installer (ouvre le launcher)"/>
                         </DataTrigger>
                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
                             <Setter TargetName="NewBadge" Property="Visibility" Value="Collapsed"/>
@@ -555,6 +568,9 @@
     </DataTemplate>
     <DataTemplate DataType="{x:Type vm:RecapViewModel}">
         <v:RecapDialog/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:DuplicatesViewModel}">
+        <v:DuplicatesDialog/>
     </DataTemplate>
     <DataTemplate DataType="{x:Type vm:OnboardingViewModel}">
         <v:OnboardingDialog/>

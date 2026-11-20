@@ -197,7 +197,7 @@ public partial class App : Application
 
     private void SetupTray(MainWindow window, Models.AppSettings settings)
     {
-        _tray = new TrayService(() => _vm!.Library.Games.Where(g => g.LastPlayedAt != null && !g.IsHidden)
+        _tray = new TrayService(() => _vm!.Library.Games.Where(g => g.LastPlayedAt != null && g.IsShown)
                                                         .OrderByDescending(g => g.LastPlayedAt));
         _tray.ShowRequested += window.ShowFromBackground;
         _tray.QuitRequested += () =>
@@ -321,7 +321,12 @@ public partial class App : Application
             vm.DetailGame = (vm.Section == Section.Home ? vm.RecentlyAdded : vm.VisibleGames)[Math.Clamp(index, 0, vm.VisibleGames.Count - 1)];
         if (o.DetailName != null)
             vm.DetailGame = vm.Library.Games.FirstOrDefault(g => g.Name.Contains(o.DetailName, StringComparison.OrdinalIgnoreCase)) ?? vm.DetailGame;
-        if (o.Dialog == "onboarding") vm.OpenOnboardingCommand.Execute(null); // shown on an empty library too
+        if (o.Dialog?.StartsWith("onboarding") == true)
+        {
+            // shown on an empty library too; "onboarding2" opens it on the 3rd step (layout check)
+            vm.OpenOnboardingCommand.Execute(null);
+            if (int.TryParse(o.Dialog["onboarding".Length..], out var step) && vm.Dialogs.OfType<OnboardingViewModel>().FirstOrDefault() is { } onb) onb.Step = step;
+        }
         // --dialog whatsnew: the "Quoi de neuf" window with sample notes (layout check)
         if (o.Dialog == "whatsnew")
             vm.Dialogs.Add(UpdateDialogViewModel.WhatsNew(vm, UpdateService.Current,
@@ -343,6 +348,7 @@ public partial class App : Application
                 case "roulette": vm.OpenRouletteCommand.Execute(null); break;
                 case "themes": vm.OpenThemesCommand.Execute(null); break;
                 case "recap": vm.OpenRecapCommand.Execute(null); break;
+                case "duplicates": vm.ShowDuplicatesCommand.Execute(null); break;
             }
         }
 

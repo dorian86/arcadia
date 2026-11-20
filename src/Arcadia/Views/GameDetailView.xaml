@@ -186,6 +186,9 @@
                                         <Style TargetType="Button" BasedOn="{StaticResource PlayButton}">
                                             <Setter Property="Content" Value="JOUER"/>
                                             <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsNotInstalled}" Value="True">
+                                                    <Setter Property="Content" Value="INSTALLER"/>
+                                                </DataTrigger>
                                                 <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                                     <Setter Property="Content" Value="EN COURS"/>
                                                 </DataTrigger>

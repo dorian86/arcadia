@@ -29,6 +29,7 @@ public partial class MainViewModel
         _ = LookUpMissingAchievementsAsync();
         _ = StartTrophiesAsync();
         _ = CheckForUpdatesOnStartupAsync();
+        _ = StartLibraryChecksAsync();
 
         // play time of the games started outside Arcadia (Steam, Epic, EA app, Battle.net, shortcuts…)
         _backgroundPlaytime = new BackgroundPlaytime(() => Library.Games.ToList(), () => Library.ScheduleSave())
@@ -65,7 +66,7 @@ public partial class MainViewModel
     private async Task BuildAllTilesAsync()
     {
         await Task.Delay(800);
-        foreach (var g in Library.Games) _tileQueue.Add(g);
+        foreach (var g in Library.Games.Where(g => !g.IsNotInstalled)) _tileQueue.Add(g);
         var ok = true;
         if (!_tileWorkerRunning) ok = await RunTileWorkerAsync(wait: false);
         else while (_tileWorkerRunning) await Task.Delay(300); // the running worker takes the queue too
@@ -76,6 +77,7 @@ public partial class MainViewModel
     /// <summary>Called when a cover, illustration or logo changes, and for new games.</summary>
     private void QueueTiles(Game game)
     {
+        if (game.IsNotInstalled) return; // never shown in the console themes
         _tileQueue.Add(game);
         if (!_tileWorkerRunning) _ = RunTileWorkerAsync(wait: true);
     }

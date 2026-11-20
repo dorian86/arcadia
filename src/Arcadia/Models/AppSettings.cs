@@ -25,6 +25,10 @@ public partial class AppSettings : ObservableObject
     [ObservableProperty] private bool _autoCheckUpdates = true;
     /// <summary>Measure the play time of library games started outside Arcadia (Steam, Epic, EA app, shortcuts…).</summary>
     [ObservableProperty] private bool _trackOutsidePlaytime = true;
+    /// <summary>Also add the games of the Steam / Epic libraries that are not installed (kept apart, with their hours).</summary>
+    [ObservableProperty] private bool _importOwnedGames = true;
+    /// <summary>Pairs of games the user said are not duplicates ("idA|idB", sorted).</summary>
+    public List<string> NotDuplicates { get; set; } = new();
 
     /// <summary>A version the user chose to skip ("Ignorer cette version").</summary>
     [ObservableProperty] private string? _skippedUpdate;

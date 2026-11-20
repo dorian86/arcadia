@@ -159,6 +159,15 @@ public partial class Game : ObservableObject
     // ---- Organisation ---------------------------------------------------------------
     [ObservableProperty] private List<string> _collections = new();
     [ObservableProperty] private bool _isHidden;
+
+    /// <summary>
+    /// In the library of a launcher (Steam, Epic) but not installed on this PC: kept apart in "Non installés",
+    /// never shown with the installed games. Playing it asks the launcher to install it.
+    /// </summary>
+    [ObservableProperty] private bool _isNotInstalled;
+
+    /// <summary>Shown with the other games (not hidden, installed).</summary>
+    [JsonIgnore] public bool IsShown => !IsHidden && !IsNotInstalled;
     public List<PlaySession> Sessions { get; set; } = new();
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasScreenshots))]

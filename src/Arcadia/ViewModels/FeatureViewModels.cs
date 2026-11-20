@@ -28,6 +28,8 @@ public partial class ScanEntry : ObservableObject
     /// <summary>What gave the game away (engine, SDK) — shown as a small badge by the folder search.</summary>
     public string? Note => Game.Note;
     public bool CanReveal => Game.ShortcutFile != null || Game.Executable != null;
+    /// <summary>Same name as a game already in the library or found in another folder: proposed unchecked.</summary>
+    [ObservableProperty] private bool _isDuplicate;
     [ObservableProperty] private bool _isSelected;
 
     /// <summary>Shows the file in the Explorer, to check what it is before adding it.</summary>
@@ -135,6 +137,15 @@ public partial class ScanViewModel : ObservableObject
 
         var entries = found.DistinctBy(d => (d.Executable ?? d.LaunchTarget).ToLowerInvariant())
                            .Select(d => new ScanEntry(d, _main.Importer.IsInLibrary(d))).ToList();
+        // the same game in two folders (or already in the library under another form): only one is checked
+        var names = _main.Library.Games.Select(g => NameMatcher.Compact(g.Name)).Where(n => n.Length >= 3).ToHashSet();
+        foreach (var e in entries.Where(e => !e.InLibrary).OrderBy(e => e.Game.Uncertain).ThenByDescending(e => e.Game.Score))
+        {
+            var key = NameMatcher.Compact(e.Name);
+            if (key.Length < 3 || names.Add(key)) continue;
+            e.IsDuplicate = true;
+            e.IsSelected = false;
+        }
         foreach (var e in entries) e.PropertyChanged += (_, _) => UpdateCount();
         var sure = entries.Where(e => !e.Game.Uncertain).OrderBy(e => e.InLibrary).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
         var maybe = entries.Where(e => e.Game.Uncertain).OrderBy(e => e.InLibrary).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -194,6 +205,7 @@ public partial class ScanViewModel : ObservableObject
             _main.IsFetchingMetadata = added.Count > 0 && _main.Settings.AutoFetchMetadata;
             _main.Sound.Play(Sfx.Notify);
             _main.ShowToast(added.Count == 1 ? $"« {added[0].Name} » a été ajouté" : $"{added.Count} jeux ajoutés depuis vos launchers", ToastKind.Success);
+            _main.ScheduleDuplicateCheck();
             Close();
             if (added.Count > 0 && _main.Section is Section.Settings or Section.Stats) _main.Section = Section.All;
         }
@@ -212,6 +224,7 @@ public partial class ScanViewModel : ObservableObject
         }
         _main.IsFetchingMetadata = games.Count > 0 && _main.Settings.AutoFetchMetadata;
         _main.Sound.Play(Sfx.Notify);
+        if (games.Count > 0) _main.ScheduleDuplicateCheck();
         _main.ShowToast(games.Count == 0 ? "Ces jeux étaient déjà dans votre bibliothèque"
                         : games.Count == 1 ? $"« {games[0].Name} » a été ajouté"
                         : $"{games.Count} jeux ajoutés depuis le dossier", games.Count == 0 ? ToastKind.Info : ToastKind.Success);
@@ -389,7 +402,7 @@ public sealed class StatsViewModel
             .Select(tier => (tier, n: Trophies.Count(t => t.IsUnlocked && t.Def.Tier == tier)))
             .Where(x => x.n > 0)
             .Select(x => $"{x.n} {x.tier switch { TrophyTier.Bronze => "bronze", TrophyTier.Argent => "argent", TrophyTier.Or => "or", _ => "platine" }}"));
-        var visible = games.Where(g => !g.IsHidden).ToList();
+        var visible = games.Where(g => g.IsShown).ToList();
         var total = visible.Sum(g => g.PlayTimeSeconds);
         var sessions = visible.SelectMany(g => g.Sessions).ToList();
         TotalTime = total > 0 ? Format.Duration(total) : "0 h";
@@ -478,7 +491,7 @@ public partial class TvModeViewModel : ObservableObject
 
     public void Open()
     {
-        var all = _main.Library.Games.Where(g => !g.IsHidden).ToList();
+        var all = _main.Library.Games.Where(g => g.IsShown).ToList();
         var cmp = StringComparer.Create(Format.Fr, true);
         var filters = new List<TvFilter>();
         var recent = all.Where(g => g.LastPlayedAt != null).OrderByDescending(g => g.LastPlayedAt).ToList();

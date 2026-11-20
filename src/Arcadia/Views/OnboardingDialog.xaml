@@ -38,7 +38,7 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-4,0,0"/>
                     </Grid>
                     <TextBlock Text="Bienvenue dans Arcadia" Style="{StaticResource StepTitle}" FontSize="36" HorizontalAlignment="Center" Margin="0,26,0,0"/>
-                    <TextBlock Text="Tous tes jeux PC réunis au même endroit. On prépare ta bibliothèque en trois petites étapes."
+                    <TextBlock Text="Tous tes jeux PC réunis au même endroit. On prépare ta bibliothèque en quelques petites étapes."
                                Style="{StaticResource StepText}" TextAlignment="Center" FontSize="15"/>
                     <UniformGrid Columns="3" Margin="0,34,0,0">
                         <StackPanel Margin="10,0">
@@ -120,7 +120,7 @@
                         <!-- nothing new -->
                         <StackPanel VerticalAlignment="Center" Visibility="{Binding NothingFound, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="&#xE946;" Style="{StaticResource Glyph}" FontSize="26" Foreground="{StaticResource TextMuted}"/>
-                            <TextBlock Text="Aucun nouveau jeu trouvé dans Steam, Epic Games, GOG, Ubisoft Connect ou l'application Xbox." FontSize="14"
+                            <TextBlock Text="Aucun nouveau jeu trouvé dans Steam, Epic Games, GOG, Ubisoft Connect, Xbox, l'EA app, Battle.net ou Riot Games." FontSize="14"
                                        Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0"/>
                         </StackPanel>
                     </Grid>
@@ -134,7 +134,77 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- ===================== 3. Theme ===================== -->
+            <!-- ===================== 3. Covers (SteamGridDB key) ===================== -->
+            <StackPanel Visibility="{Binding IsCovers, Converter={StaticResource BoolToVis}}" Margin="48,40,48,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Des jaquettes pour tous tes jeux" Style="{StaticResource StepTitle}"/>
+                    <Border CornerRadius="8" Background="{DynamicResource AccentGradient}" Padding="10,4" Margin="14,4,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="RECOMMANDÉ" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                    </Border>
+                </StackPanel>
+                <TextBlock Style="{StaticResource StepText}">
+                    <Run Text="Beaucoup de jeux n'ont pas de jaquette officielle : jeux hors Steam, jeux indés, jeux d'émulateurs… Avec une clé"/>
+                    <Run Text="SteamGridDB" FontWeight="SemiBold" Foreground="White"/><Run Text=", Arcadia en trouve pour presque tous. C'est"/>
+                    <Run Text="gratuit" FontWeight="SemiBold" Foreground="White"/><Run Text=" et ça prend"/>
+                    <Run Text="2 minutes" FontWeight="SemiBold" Foreground="White"/><Run Text="."/>
+                </TextBlock>
+
+                <Grid Margin="0,22,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border CornerRadius="14" Background="{StaticResource Surface2}" BorderBrush="{StaticResource Stroke}" BorderThickness="1" Padding="18,16">
+                        <StackPanel>
+                            <TextBlock Text="1" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                            <TextBlock Text="Ouvre la page de SteamGridDB et connecte-toi (avec ton compte Steam, c'est le plus rapide)." TextWrapping="Wrap"
+                                       FontSize="13" Foreground="{StaticResource TextSecondary}" LineHeight="19" Margin="0,6,0,12"/>
+                            <Button Style="{StaticResource SecondaryButton}" c:Ui.Glyph="&#xE8A7;" Content="Ouvrir SteamGridDB" HorizontalAlignment="Left"
+                                    Command="{Binding OpenGridKeyPageCommand}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" CornerRadius="14" Background="{StaticResource Surface2}" BorderBrush="{StaticResource Stroke}" BorderThickness="1" Padding="18,16">
+                        <StackPanel>
+                            <TextBlock Text="2" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSecondary}" LineHeight="19" Margin="0,6,0,0">
+                                <Run Text="Dans la section"/> <Run Text="API" FontWeight="SemiBold" Foreground="White"/><Run Text=", clique sur"/>
+                                <Run Text="« Generate API Key »" FontWeight="SemiBold" Foreground="White"/><Run Text=", puis copie la clé qui s'affiche."/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="4" CornerRadius="14" Background="{StaticResource Surface2}" BorderBrush="{StaticResource Stroke}" BorderThickness="1" Padding="18,16">
+                        <StackPanel>
+                            <TextBlock Text="3" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                            <TextBlock Text="Colle-la ci-dessous. Elle est enregistrée sur ton PC uniquement." TextWrapping="Wrap"
+                                       FontSize="13" Foreground="{StaticResource TextSecondary}" LineHeight="19" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <TextBlock Text="Clé API SteamGridDB" Style="{StaticResource FieldLabel}" Margin="2,24,0,7"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Style="{StaticResource InputBox}" Height="46" FontSize="14" c:Ui.Glyph="&#xE192;" c:Ui.Placeholder="Colle ta clé ici"
+                             Text="{Binding GridKey, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Border Grid.Column="1" CornerRadius="10" Background="#263DDC97" Padding="14,0" Margin="10,0,0,0" Height="46"
+                            Visibility="{Binding HasGridKey, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE73E;" Style="{StaticResource Glyph}" FontSize="13" Foreground="{StaticResource Success}"/>
+                            <TextBlock Text="Clé enregistrée" FontWeight="SemiBold" Foreground="{StaticResource Success}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+                <TextBlock Text="Tu peux aussi le faire plus tard dans Réglages → Jaquettes et images, mais tes jeux sans jaquette garderont une image générée en attendant."
+                           FontSize="12.5" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="2,12,0,0"/>
+            </StackPanel>
+
+            <!-- ===================== 4. Theme ===================== -->
             <StackPanel Visibility="{Binding IsTheme, Converter={StaticResource BoolToVis}}" Margin="48,44,40,0">
                 <TextBlock Text="Ton interface" Style="{StaticResource StepTitle}"/>
                 <TextBlock Text="L'interface Arcadia, ou une interface dans l'esprit des menus de consoles. Tu pourras en changer à tout moment avec le bouton « Thèmes »."

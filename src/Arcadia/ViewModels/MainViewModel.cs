@@ -11,7 +11,7 @@ using Microsoft.Win32;
 
 namespace Arcadia.ViewModels;
 
-public enum Section { Home, All, Favorites, Recent, Missing, Hidden, Collection, Platform, Status, Stats, Settings }
+public enum Section { Home, All, Favorites, Recent, Missing, Hidden, Collection, Platform, Status, Stats, Settings, NotInstalled }
 
 /// <summary>An entry of a dynamic sidebar list (collection or platform).</summary>
 public partial class NavEntry : ObservableObject
@@ -136,6 +136,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _recentCount;
     [ObservableProperty] private int _missingCount;
     [ObservableProperty] private int _hiddenCount;
+    /// <summary>Games of the launchers (Steam, Epic) not installed on this PC.</summary>
+    [ObservableProperty] private int _notInstalledCount;
     [ObservableProperty] private int _selectedCount;
     [ObservableProperty] private bool _isDragOver;
     [ObservableProperty] private bool _isImporting;
@@ -167,19 +169,20 @@ public partial class MainViewModel : ObservableObject
 
     public bool HasGames => AllCount > 0;
 
-    public bool IsLibrarySection => Section is Section.All or Section.Favorites or Section.Recent or Section.Missing
+    public bool IsLibrarySection => Section is Section.All or Section.Favorites or Section.Recent or Section.Missing or Section.NotInstalled
         or Section.Hidden or Section.Collection or Section.Platform or Section.Status;
 
     public bool IsCollectionSection => Section == Section.Collection;
 
-    /// <summary>"All games" filters: every game, or only the ones whose file can no longer be found.</summary>
-    public bool ShowMissingFilter => Section is Section.All or Section.Missing;
+    /// <summary>"All games" filters: installed games, games of the launchers not installed, games whose file is gone.</summary>
+    public bool ShowMissingFilter => Section is Section.All or Section.Missing or Section.NotInstalled;
 
     public string PageTitle => Section switch
     {
         Section.Favorites => "Favoris",
         Section.Recent => "Récemment joués",
         Section.Missing => "Jeux introuvables",
+        Section.NotInstalled => "Jeux non installés",
         Section.Hidden => "Jeux masqués",
         Section.Collection => CurrentCollection ?? "Collection",
         Section.Platform => CurrentPlatform is { } p ? StoreInfo.Label(p) : "Plateforme",
@@ -200,6 +203,7 @@ public partial class MainViewModel : ObservableObject
             return Section switch
             {
                 Section.Missing => $"{games} dont le fichier de lancement est introuvable",
+                Section.NotInstalled => NotInstalledSubtitle(games),
                 Section.Hidden => $"{games} masqué(s) de la bibliothèque",
                 Section.Collection => $"Collection  ·  {games}",
                 _ => games,
@@ -221,7 +225,7 @@ public partial class MainViewModel : ObservableObject
         get
         {
             if (AllCount == 0) return "Votre bibliothèque vous attend.";
-            var total = Library.Games.Sum(g => g.PlayTimeSeconds);
+            var total = Library.Games.Where(g => g.IsShown).Sum(g => g.PlayTimeSeconds);
             var games = AllCount == 1 ? "1 jeu" : $"{AllCount} jeux";
             return total >= 60 ? $"{games} dans votre bibliothèque  ·  {Format.Duration(total)} de jeu" : $"{games} dans votre bibliothèque";
         }
@@ -236,6 +240,7 @@ public partial class MainViewModel : ObservableObject
             Section.Favorites => "Aucun favori pour l'instant",
             Section.Recent => "Aucun jeu lancé récemment",
             Section.Missing => "Tout est en ordre",
+            Section.NotInstalled => "Aucun jeu non installé",
             Section.Hidden => "Aucun jeu masqué",
             Section.Collection => "Collection vide",
             _ => "Aucun jeu",
@@ -248,6 +253,7 @@ public partial class MainViewModel : ObservableObject
             Section.Favorites => "Cliquez sur le cœur d'un jeu pour le retrouver ici.",
             Section.Recent => "Les jeux que vous lancez depuis Arcadia apparaîtront ici.",
             Section.Missing => "Tous vos jeux sont accessibles.",
+            Section.NotInstalled => "Les jeux de vos bibliothèques Steam et Epic Games que vous n'avez pas installés apparaîtront ici, avec leurs heures de jeu.",
             Section.Hidden => "Clic droit sur un jeu → « Masquer » pour le ranger ici.",
             Section.Collection => "Clic droit sur un jeu → « Collections… » pour l'ajouter ici.",
             _ => "",
@@ -409,12 +415,13 @@ public partial class MainViewModel : ObservableObject
     public void Refresh()
     {
         var everything = Library.Games.ToList();
-        var all = everything.Where(g => !g.IsHidden).ToList();
+        var all = everything.Where(g => g.IsShown).ToList();
         AllCount = all.Count;
         FavoritesCount = all.Count(g => g.IsFavorite);
         RecentCount = all.Count(g => g.LastPlayedAt != null);
-        MissingCount = everything.Count(g => g.IsMissing);
-        HiddenCount = everything.Count - all.Count;
+        MissingCount = everything.Count(g => g.IsMissing && !g.IsNotInstalled);
+        HiddenCount = everything.Count(g => g.IsHidden);
+        NotInstalledCount = everything.Count(g => g.IsNotInstalled && !g.IsHidden);
         MissingArtCount = everything.Count(g => !g.HasCover || g.CoverGenerated);
 
         // "NOUVEAU" badges only make sense for a handful of games, not after importing a whole folder.
@@ -433,7 +440,8 @@ public partial class MainViewModel : ObservableObject
         {
             Section.Favorites => all.Where(g => g.IsFavorite),
             Section.Recent => all.Where(g => g.LastPlayedAt != null),
-            Section.Missing => everything.Where(g => g.IsMissing),
+            Section.Missing => everything.Where(g => g.IsMissing && !g.IsNotInstalled),
+            Section.NotInstalled => everything.Where(g => g.IsNotInstalled && !g.IsHidden),
             Section.Hidden => everything.Where(g => g.IsHidden),
             Section.Collection => all.Where(g => CurrentCollection != null && g.Collections.Contains(CurrentCollection, StringComparer.CurrentCultureIgnoreCase)),
             Section.Platform => all.Where(g => g.Store == CurrentPlatform),
@@ -747,7 +755,7 @@ public partial class MainViewModel : ObservableObject
             IsDanger = true,
             OnConfirm = () =>
             {
-                foreach (var g in sel) Library.Remove(g);
+                foreach (var g in sel) RemoveFromLibrary(g);
                 ShowToast($"{sel.Count} jeu(x) retiré(s) de la bibliothèque", ToastKind.Info);
                 ClearSelection();
             },
@@ -848,6 +856,18 @@ public partial class MainViewModel : ObservableObject
             ShowToast($"« {game.Name} » est déjà en cours d'exécution.", ToastKind.Info);
             return;
         }
+        if (game.IsNotInstalled)
+        {
+            // the launcher offers to install it; it moves back with the installed games once it is there
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(game.LaunchTarget) { UseShellExecute = true });
+                Sound.Play(Sfx.Open);
+                ShowToast($"{StoreInfo.Label(game.Store)} va proposer d'installer « {game.Name} »", ToastKind.Info);
+            }
+            catch (Exception ex) { ShowToast($"Impossible d'ouvrir {StoreInfo.Label(game.Store)} : {ex.Message}", ToastKind.Error); }
+            return;
+        }
 
         var result = Launcher.Launch(game);
         switch (result.Outcome)
@@ -945,7 +965,7 @@ public partial class MainViewModel : ObservableObject
             OnConfirm = () =>
             {
                 if (DetailGame == game) DetailGame = null;
-                Library.Remove(game);
+                RemoveFromLibrary(game);
                 ShowToast($"« {game.Name} » a été retiré de la bibliothèque", ToastKind.Info);
             },
         });
@@ -1083,6 +1103,7 @@ public partial class MainViewModel : ObservableObject
                     ? $"« {report.Added[0].Name} » a été ajouté à la bibliothèque"
                     : $"{report.Added.Count} jeux ajoutés à la bibliothèque", ToastKind.Success);
                 if (Section is Section.Settings or Section.Stats) Section = Section.All;
+                ScheduleDuplicateCheck();
                 if (report.Added.Any(g => g.Store == GameStore.Emulator)) _ = RefreshEmulatorsAsync(delay: false);
             }
             if (report.Duplicates > 0)
@@ -1249,6 +1270,7 @@ public partial class MainViewModel : ObservableObject
         var top = Dialogs[^1];
         if (top is CoverSearchViewModel search) search.CloseCommand.Execute(null);
         else if (top is ScanViewModel scan) scan.CloseCommand.Execute(null);
+        else if (top is DuplicatesViewModel dup) dup.CloseCommand.Execute(null);
         else if (top is OnboardingViewModel onboarding) onboarding.SkipCommand.Execute(null);
         else Dialogs.Remove(top);
         return true;

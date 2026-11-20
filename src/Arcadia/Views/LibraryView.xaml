@@ -13,6 +13,10 @@
 
         <!-- Header -->
         <Grid Margin="44,48,44,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -20,12 +24,20 @@
             <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
                 <TextBlock Text="{Binding PageTitle}" Style="{StaticResource PageTitle}"/>
                 <TextBlock Text="{Binding PageSubtitle}" Style="{StaticResource PageSubtitle}"/>
+            </StackPanel>
                 <!-- Filters of "All games" -->
-                <StackPanel Orientation="Horizontal" Margin="0,14,0,-8" Visibility="{Binding ShowMissingFilter, Converter={StaticResource BoolToVis}}">
+                <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,14,0,-8" Visibility="{Binding ShowMissingFilter, Converter={StaticResource BoolToVis}}">
                     <Button Style="{StaticResource StatusPill}" c:Ui.Glyph="&#xE8F1;" Foreground="{StaticResource TextPrimary}"
                             Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:Section.All}"
+                            ToolTip="Les jeux installés sur ce PC"
                             c:Ui.IsActive="{Binding Section, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static vm:Section.All}}">
-                        <TextBlock><Run Text="Tous"/><Run Text=" · "/><Run Text="{Binding AllCount, Mode=OneWay}"/></TextBlock>
+                        <TextBlock><Run Text="Installés"/><Run Text=" · "/><Run Text="{Binding AllCount, Mode=OneWay}"/></TextBlock>
+                    </Button>
+                    <Button Style="{StaticResource StatusPill}" c:Ui.Glyph="&#xE896;" Foreground="{StaticResource TextPrimary}"
+                            Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:Section.NotInstalled}"
+                            ToolTip="Les jeux de vos bibliothèques Steam (famille comprise) et Epic Games que vous n'avez pas installés, avec leurs heures de jeu"
+                            c:Ui.IsActive="{Binding Section, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static vm:Section.NotInstalled}}">
+                        <TextBlock><Run Text="Non installés"/><Run Text=" · "/><Run Text="{Binding NotInstalledCount, Mode=OneWay}"/></TextBlock>
                     </Button>
                     <Button Style="{StaticResource StatusPill}" c:Ui.Glyph="&#xE7BA;" Foreground="{StaticResource TextPrimary}"
                             Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:Section.Missing}"
@@ -33,8 +45,7 @@
                             c:Ui.IsActive="{Binding Section, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter={x:Static vm:Section.Missing}}">
                         <TextBlock><Run Text="Jeux introuvables"/><Run Text=" · "/><Run Text="{Binding MissingCount, Mode=OneWay}"/></TextBlock>
                     </Button>
-                </StackPanel>
-            </StackPanel>
+                </WrapPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Style="{StaticResource IconButton}" c:Ui.Glyph="&#xE8B1;" Margin="0,0,10,0" Background="{StaticResource Surface2}"
                         WindowChrome.IsHitTestVisibleInChrome="True" Command="{Binding OpenRouletteCommand}" ToolTip="Au hasard : je ne sais pas à quoi jouer"/>
