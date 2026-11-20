@@ -42,7 +42,8 @@ public static partial class EmulatorAchievements
         var name = Path.GetFileName(path);
         return name.Equals("achievements.json", StringComparison.OrdinalIgnoreCase)
                || name.Equals("achievements.ini", StringComparison.OrdinalIgnoreCase)
-               || name.Equals("CreamAPI.Achievements.cfg", StringComparison.OrdinalIgnoreCase);
+               || name.Equals("CreamAPI.Achievements.cfg", StringComparison.OrdinalIgnoreCase)
+               || name.Equals("user_stats.ini", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The Steam app id in the path of an achievement file (the "&lt;appid&gt;" folder), if any.</summary>
@@ -57,7 +58,7 @@ public static partial class EmulatorAchievements
     /// What is unlocked for a Steam app (achievement API name → unlock date, MinValue when unknown), merged from
     /// every emulator on the PC and from the game's own folder (emulators set to save next to the game).
     /// </summary>
-    public static Dictionary<string, DateTime> ReadUnlocked(int appId, string? gameFolder)
+    public static Dictionary<string, DateTime> ReadUnlocked(int appId, string? gameFolder, string? exeFolder = null)
     {
         var result = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         var files = new List<string>();
@@ -66,7 +67,7 @@ public static partial class EmulatorAchievements
             var path = Path.Combine(root, appId.ToString(CultureInfo.InvariantCulture), string.Format(CultureInfo.InvariantCulture, file, appId));
             if (File.Exists(path)) files.Add(path);
         }
-        files.AddRange(LocalSaveFiles(gameFolder, appId));
+        files.AddRange(LocalSaveFiles(gameFolder, appId, exeFolder));
         foreach (var f in files)
         {
             try
@@ -80,29 +81,66 @@ public static partial class EmulatorAchievements
     }
 
     /// <summary>Does the game write achievement files (even with nothing unlocked yet)?</summary>
-    public static bool HasFiles(int appId, string? gameFolder) =>
+    public static bool HasFiles(int appId, string? gameFolder, string? exeFolder = null) =>
         Layouts().Any(l => File.Exists(Path.Combine(l.Root, appId.ToString(CultureInfo.InvariantCulture), string.Format(CultureInfo.InvariantCulture, l.File, appId))))
-        || LocalSaveFiles(gameFolder, appId).Any();
+        || LocalSaveFiles(gameFolder, appId, exeFolder).Any();
 
     /// <summary>Achievement files saved inside the game folder ("local save" setups): …\&lt;appid&gt;\achievements.json.</summary>
-    internal static IEnumerable<string> LocalSaveFiles(string? gameFolder, int appId)
+    internal static IEnumerable<string> LocalSaveFiles(string? gameFolder, int appId, string? exeFolder = null)
     {
         if (string.IsNullOrEmpty(gameFolder) || !Directory.Exists(gameFolder)) yield break;
-        IEnumerable<string> found;
+        var found = new List<string>();
         try
         {
-            found = Directory.EnumerateFiles(gameFolder, "achievements.*", new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 6, IgnoreInaccessible = true })
-                .Where(f => IsAchievementFile(f) && AppIdFromPath(f) == appId).ToList();
+            found.AddRange(Directory.EnumerateFiles(gameFolder, "achievements.*", new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 6, IgnoreInaccessible = true })
+                .Where(f => IsAchievementFile(f) && AppIdFromPath(f) == appId));
         }
-        catch { yield break; }
-        foreach (var f in found) yield return f;
+        catch { /* inaccessible */ }
+        found.AddRange(TenokeFiles(gameFolder, exeFolder));
+        foreach (var f in found.Distinct(StringComparer.OrdinalIgnoreCase)) yield return f;
     }
+
+    /// <summary>TENOKE releases: "SteamData\user_stats.ini" next to the game's exe (or at the top of its folder).</summary>
+    internal static IEnumerable<string> TenokeFiles(string? gameFolder, string? exeFolder)
+    {
+        foreach (var dir in new[] { exeFolder, gameFolder }.Where(d => !string.IsNullOrEmpty(d)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var file = Path.Combine(dir!, "SteamData", "user_stats.ini");
+            if (File.Exists(file)) yield return file;
+        }
+    }
+
+    /// <summary>
+    /// TENOKE: [ACHIEVEMENTS] then one line per achievement: "achi_final" = {unlocked = true, time = 1780924441}
+    /// </summary>
+    internal static Dictionary<string, DateTime> ParseTenoke(string text)
+    {
+        var result = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        foreach (Match m in TenokeLine().Matches(text))
+        {
+            var body = m.Groups["body"].Value;
+            if (!TenokeUnlocked().IsMatch(body)) continue;
+            var time = TenokeTime().Match(body) is { Success: true } t && long.TryParse(t.Groups[1].Value, out var n) ? n : 0;
+            result[m.Groups["key"].Value.Trim()] = FromUnix(time);
+        }
+        return result;
+    }
+
+    [GeneratedRegex(@"^\s*""?(?<key>[^""=\r\n]+?)""?\s*=\s*\{(?<body>[^}\r\n]*)\}", RegexOptions.Multiline)]
+    private static partial Regex TenokeLine();
+
+    [GeneratedRegex(@"unlocked\s*=\s*(true|1)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex TenokeUnlocked();
+
+    [GeneratedRegex(@"time\s*=\s*(\d+)", RegexOptions.IgnoreCase)]
+    private static partial Regex TenokeTime();
 
     /// <summary>Reads any of the formats: JSON (Goldberg / GSE), INI with one section per achievement, RLD! list.</summary>
     internal static Dictionary<string, DateTime> Parse(string text)
     {
         var t = text.TrimStart('\uFEFF', ' ', '\r', '\n', '\t');
         if (t.StartsWith('{')) return ParseJson(t);
+        if (t.Contains("{unlocked", StringComparison.OrdinalIgnoreCase) || TenokeLine().IsMatch(t)) return ParseTenoke(t);
         return t.Contains("ACHCount", StringComparison.OrdinalIgnoreCase) ? ParseRld(t) : ParseIni(t);
     }
 
@@ -222,6 +260,7 @@ public static partial class EmulatorAchievements
                     "onlinefix.ini" => IniNumber(ReadShared(file), "RealAppId"),
                     "steam_emu.ini" or "smartsteamemu.ini" => IniNumber(ReadShared(file), "AppId"),
                     "cream_api.ini" => IniNumber(ReadShared(file), "appid"),
+                    "tenoke.ini" => IniNumber(ReadShared(file), "id"),
                     _ => null,
                 };
                 if (id is > 0 and not 480) return id;

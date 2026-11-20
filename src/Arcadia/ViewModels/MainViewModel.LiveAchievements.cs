@@ -12,7 +12,7 @@ namespace Arcadia.ViewModels;
 public partial class MainViewModel
 {
     /// <summary>Game → Steam app id of its achievement files and its folder.</summary>
-    private readonly Dictionary<Game, (int AppId, string? Folder)> _liveAchievements = new();
+    private readonly Dictionary<Game, (int AppId, string? Folder, string? ExeFolder)> _liveAchievements = new();
     /// <summary>Steam app id written in the game's folder (more reliable than a match by name).</summary>
     private readonly Dictionary<Game, int> _folderAppIds = new();
     private AchievementFileWatcher? _achievementWatcher;
@@ -27,6 +27,12 @@ public partial class MainViewModel
         return exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? ProcessWatcher.GameFolderOf(exe) : null;
     }
 
+    private static string? ExeFolderOf(Game g)
+    {
+        var exe = g.TargetPath is { Length: > 0 } t ? t : g.LaunchTarget;
+        return exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? Path.GetDirectoryName(exe) : null;
+    }
+
     /// <summary>At startup: finds which games write achievement files, catches up on what was unlocked, then watches.</summary>
     private async Task StartLiveAchievementsAsync()
     {
@@ -36,12 +42,12 @@ public partial class MainViewModel
             var games = Library.Games.Where(CanFollowAchievements).ToList();
             var found = await Task.Run(() => games
                 .Select(g => (Game: g, Folder: FolderOf(g)))
-                .Select(x => (x.Game, x.Folder, AppId: EmulatorAchievements.AppIdFromFolder(x.Folder),
-                              LocalSave: x.Folder != null && HasLocalSave(x.Folder)))
+                .Select(x => (x.Game, x.Folder, ExeFolder: ExeFolderOf(x.Game), AppId: EmulatorAchievements.AppIdFromFolder(x.Folder),
+                              LocalSave: x.Folder != null && HasLocalSave(x.Folder, ExeFolderOf(x.Game))))
                 .ToList());
 
             var localFolders = new List<string>();
-            foreach (var (game, folder, folderId, localSave) in found)
+            foreach (var (game, folder, exeFolder, folderId, localSave) in found)
             {
                 if (folderId is int id)
                 {
@@ -49,7 +55,7 @@ public partial class MainViewModel
                     // the list was looked up by name (or not found): the folder knows the real game
                     if (game.AchievementsAppId != id) QueueAchievements(game);
                 }
-                if ((folderId ?? game.AchievementsAppId ?? game.SteamAppId) is int appId) _liveAchievements[game] = (appId, folder);
+                if ((folderId ?? game.AchievementsAppId ?? game.SteamAppId) is int appId) _liveAchievements[game] = (appId, folder, exeFolder);
                 if (localSave && folder != null) localFolders.Add(folder);
             }
 
@@ -67,12 +73,13 @@ public partial class MainViewModel
         catch (Exception ex) { Log.Warn($"Live achievements unavailable: {ex.Message}"); }
     }
 
-    /// <summary>Emulators set to save next to the game (Goldberg "local_save.txt").</summary>
-    private static bool HasLocalSave(string folder)
+    /// <summary>Emulators that save next to the game (Goldberg "local_save.txt", TENOKE "SteamData").</summary>
+    private static bool HasLocalSave(string folder, string? exeFolder)
     {
         try
         {
-            return Directory.EnumerateFiles(folder, "local_save.txt", new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 5, IgnoreInaccessible = true }).Any();
+            return EmulatorAchievements.TenokeFiles(folder, exeFolder).Any()
+                   || Directory.EnumerateFiles(folder, "local_save.txt", new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 5, IgnoreInaccessible = true }).Any();
         }
         catch { return false; }
     }
@@ -98,7 +105,7 @@ public partial class MainViewModel
     {
         if (!_liveAchievements.TryGetValue(game, out var source)) return 0;
         var (unlocked, hasFiles) = await Task.Run(() =>
-            (EmulatorAchievements.ReadUnlocked(source.AppId, source.Folder), EmulatorAchievements.HasFiles(source.AppId, source.Folder)));
+            (EmulatorAchievements.ReadUnlocked(source.AppId, source.Folder, source.ExeFolder), EmulatorAchievements.HasFiles(source.AppId, source.Folder, source.ExeFolder)));
         if (hasFiles) game.AchievementsTracked = true;
         if (game.Achievements is not { Count: > 0 } list || unlocked.Count == 0) return 0;
 

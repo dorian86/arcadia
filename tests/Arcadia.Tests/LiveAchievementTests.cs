@@ -38,6 +38,30 @@ public class LiveAchievementTests : IDisposable
     }
 
     [Fact]
+    public void ReadsTenokeUserStats()
+    {
+        var game = Directory.CreateDirectory(Path.Combine(_dir, "MiSide"));
+        Directory.CreateDirectory(Path.Combine(game.FullName, "MiSideFull_Data", "Plugins", "x86_64"));
+        File.WriteAllText(Path.Combine(game.FullName, "MiSideFull_Data", "Plugins", "x86_64", "tenoke.ini"),
+            "[TENOKE]\n# appid\nid = 2527500 # MiSide\n\n# username\nuser = \"TENOKE\"\n");
+        Directory.CreateDirectory(Path.Combine(game.FullName, "SteamData"));
+        File.WriteAllText(Path.Combine(game.FullName, "SteamData", "user_stats.ini"),
+            "[STATS]\n\"SOAP_COLLECTED\" = 2.000000\n\n[ACHIEVEMENTS]\n\"achi_mmnice\" = {unlocked = true, time = 1780909064}\n\"achi_final\" = {unlocked = true, time = 1780924441}\n\"achi_locked\" = {unlocked = false, time = 0}\n");
+
+        Assert.Equal(2527500, EmulatorAchievements.AppIdFromFolder(game.FullName));
+        var unlocked = EmulatorAchievements.ReadUnlocked(2527500, game.FullName);
+        Assert.Equal(new[] { "achi_final", "achi_mmnice" }, unlocked.Keys.Order());
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1780924441).LocalDateTime, unlocked["achi_final"]);
+        Assert.True(EmulatorAchievements.HasFiles(2527500, game.FullName));
+        Assert.True(EmulatorAchievements.IsAchievementFile(Path.Combine(game.FullName, "SteamData", "user_stats.ini")));
+    }
+
+    [Fact]
+    public void GoldbergDefinitionListsAreNotUnlocks() =>
+        // steam_settings\achievements.json lists the achievements (an array): nothing is unlocked by it
+        Assert.Empty(EmulatorAchievements.Parse("""[ { "name": "BABA_LAKE", "displayName": "Water Is Sink", "hidden": 0 } ]"""));
+
+    [Fact]
     public void ReadsRldLists()
     {
         var u = EmulatorAchievements.Parse("[Steam]\nACHCount = 3\nACH001 = LEVEL_1\nACHG001 = 1\nACH002 = LEVEL_10\nACHG002 = 0\nACH003 = BOSS\nACHG003 = 1\n");
