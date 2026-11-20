@@ -104,12 +104,14 @@ public partial class MainViewModel
                 if (!Library.Games.Contains(game) || !game.CanHaveAchievements) continue;
                 try
                 {
-                    var appId = await _achievementService.FindAppIdAsync(game);
+                    // the Steam app id written in the game's folder beats a match by name
+                    var appId = _folderAppIds.TryGetValue(game, out var fromFolder) ? fromFolder : await _achievementService.FindAppIdAsync(game);
                     var list = appId is int id ? await _achievementService.FetchAsync(id) : new List<Achievement>();
                     if (!Library.Games.Contains(game)) continue;
                     game.Achievements = AchievementService.Merge(list, game.Achievements);
                     game.AchievementsAppId = appId;
                     if (game.AchievementsSynced) await SyncSteamAchievementsAsync(game);
+                    else if (_liveAchievements.ContainsKey(game)) await SyncLiveAchievementsAsync(game, notify: false);
                     Log.Info(list.Count > 0
                         ? $"Achievements of '{game.Name}': {list.Count} (Steam app {appId})"
                         : $"No achievements found for '{game.Name}'");

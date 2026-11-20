@@ -242,6 +242,13 @@
                         <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Importer maintenant" c:Ui.Glyph="&#xE896;" Command="{Binding ImportSteamPlaytimeCommand}"/>
                     </Grid>
                     <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AchievementPopups}">
+                        <StackPanel>
+                            <TextBlock Text="Afficher les succès débloqués pendant le jeu" Style="{StaticResource RowTitle}"/>
+                            <TextBlock Text="Pour les jeux lancés sans leur launcher officiel qui enregistrent leurs succès sur ce PC : Arcadia les suit en direct et affiche « Succès débloqué » en bas à droite de l'écran, par-dessus le jeu (en fenêtre ou en plein écran fenêtré)." Style="{StaticResource RowHint}"/>
+                        </StackPanel>
+                    </CheckBox>
+                    <Border Style="{StaticResource Divider}"/>
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.TrackOutsidePlaytime}">
                         <StackPanel>
                             <TextBlock Text="Mesurer le temps de jeu des jeux lancés hors d'Arcadia" Style="{StaticResource RowTitle}"/>

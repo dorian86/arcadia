@@ -33,7 +33,7 @@ Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, d
 - 📊 **En ce moment sur Steam** dans la fiche : joueurs en ligne, prix et promo, Metacritic, avec des liens vers SteamDB et HowLongToBeat.
 - 📰 **Actualités** de chaque jeu dans sa fiche : les dernières annonces officielles (mises à jour, événements).
 - 🏅 **Trophées Arcadia** pour tous vos jeux (temps de jeu, jeux terminés, séries de jours…) et **« Ton année de jeu »**, le récap de votre année : jeu de l'année, top 5, mois par mois, records.
-- 🏆 **Succès** : ceux de vos jeux Steam s'affichent et se synchronisent tout seuls (lus sur votre PC, même hors ligne). Pour vos jeux lancés en `.exe` ou par raccourci, Arcadia récupère la liste officielle (en français, avec icônes et rareté) et vous cochez ceux que vous avez obtenus.
+- 🏆 **Succès** : ceux de vos jeux Steam s'affichent et se synchronisent tout seuls (lus sur votre PC, même hors ligne). Pour vos jeux lancés en `.exe` ou par raccourci, Arcadia récupère la liste officielle (en français, avec icônes et rareté) et vous cochez ceux que vous avez obtenus. Pour les jeux lancés sans leur launcher officiel, Arcadia suit en direct les succès qu'ils enregistrent sur votre PC et affiche « Succès débloqué » par-dessus le jeu.
 - 🎮 **Mode TV** plein écran pour jouer depuis le canapé avec une manette Xbox.
 - 🕹️ **Émulateurs** : vos ROM deviennent des jeux comme les autres, avec leur jaquette.
 - 🎨 **Thèmes d'interface** dans l'esprit des menus de consoles : Wii, Wii U, Switch, PS3, PS4 et PS5.

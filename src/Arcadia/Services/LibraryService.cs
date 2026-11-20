@@ -18,7 +18,7 @@ public sealed class LibraryService
     private static readonly HashSet<string> TransientProperties = new()
     {
         nameof(Game.IsMissing), nameof(Game.IsRunning), nameof(Game.IsFetching), nameof(Game.IsSelected), nameof(Game.VersionLabel),
-        nameof(Game.News), nameof(Game.HasNews), nameof(Game.SteamStats), nameof(Game.HasSteamStats),
+        nameof(Game.News), nameof(Game.HasNews), nameof(Game.SteamStats), nameof(Game.HasSteamStats), nameof(Game.AchievementsTracked), nameof(Game.AchievementsHint),
     };
 
     private readonly DispatcherTimer _saveTimer;

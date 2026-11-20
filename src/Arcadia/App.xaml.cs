@@ -331,6 +331,8 @@ public partial class App : Application
             vm.OpenOnboardingCommand.Execute(null);
             if (int.TryParse(o.Dialog["onboarding".Length..], out var step) && vm.Dialogs.OfType<OnboardingViewModel>().FirstOrDefault() is { } onb) onb.Step = step;
         }
+        // --dialog achievement: the "achievement unlocked" popup over the screen
+        if (o.Dialog == "achievement") Views.AchievementPopup.Enqueue(new Views.AchievementNotice("Charmé", "Hollow Knight  ·  76,7 % des joueurs", "https://cdn.fastly.steamstatic.com/steamcommunity/public/images/apps/367520/6d15e62c48ba57d23e72b8f24fb775a44223cb8f.jpg"));
         // --dialog whatsnew: the "Quoi de neuf" window with sample notes (layout check)
         if (o.Dialog == "whatsnew")
             vm.Dialogs.Add(UpdateDialogViewModel.WhatsNew(vm, UpdateService.Current,

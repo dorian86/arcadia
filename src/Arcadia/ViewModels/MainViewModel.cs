@@ -302,6 +302,7 @@ public partial class MainViewModel : ObservableObject
     public void Shutdown()
     {
         _backgroundPlaytime?.Dispose(); // sessions in progress outside Arcadia are recorded up to now
+        _achievementWatcher?.Dispose();
         Library.SaveNow();
         _settingsService.SaveNow();
     }

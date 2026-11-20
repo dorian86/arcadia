@@ -30,6 +30,7 @@ public partial class MainViewModel
         _ = StartTrophiesAsync();
         _ = CheckForUpdatesOnStartupAsync();
         _ = StartLibraryChecksAsync();
+        _ = StartLiveAchievementsAsync();
 
         // play time of the games started outside Arcadia (Steam, Epic, EA app, Battle.net, shortcuts…)
         _backgroundPlaytime = new BackgroundPlaytime(() => Library.Games.ToList(), () => Library.ScheduleSave())

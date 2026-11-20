@@ -377,10 +377,16 @@ public partial class Game : ObservableObject
     /// <summary>Steam itself says what is unlocked: the list is read-only.</summary>
     [JsonIgnore] public bool AchievementsSynced => Store == GameStore.Steam;
 
+    /// <summary>The game writes its achievements in local files that Arcadia follows live (not saved).</summary>
+    [JsonIgnore] public bool AchievementsTracked { get => _achievementsTracked; set { if (SetProperty(ref _achievementsTracked, value)) OnPropertyChanged(nameof(AchievementsHint)); } }
+    private bool _achievementsTracked;
+
     [JsonIgnore]
     public string AchievementsHint => AchievementsSynced
         ? "Synchronisé automatiquement avec vos succès Steam."
-        : "Cliquez sur un succès pour le cocher quand vous l'avez obtenu dans le jeu. Liste officielle de Steam.";
+        : AchievementsTracked
+            ? "Synchronisé en direct avec les succès enregistrés par le jeu sur ce PC. Vous pouvez aussi cocher un succès à la main."
+            : "Cliquez sur un succès pour le cocher quand vous l'avez obtenu dans le jeu. Liste officielle de Steam.";
     [JsonIgnore] public bool HasAchievements => CanHaveAchievements && Achievements is { Count: > 0 };
 
     /// <summary>
