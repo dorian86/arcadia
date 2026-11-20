@@ -111,6 +111,7 @@ public sealed class LibraryService
         _saveTimer.Stop();
         try
         {
+            using var _ = UiLagMonitor.Step($"Library save ({Games.Count} games)", 150);
             JsonFile.Write(AppPaths.LibraryFile, new LibraryData { Games = Games.ToList(), Collections = Collections.ToList() });
         }
         catch (Exception ex)

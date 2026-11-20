@@ -33,7 +33,11 @@ public partial class MainViewModel
     }
 
     /// <summary>The games that are in the library twice (pairs the user said are different left out).</summary>
-    public List<List<Game>> FindDuplicates() => Duplicates.Find(Library.Games.ToList(), Settings.NotDuplicates);
+    public List<List<Game>> FindDuplicates()
+    {
+        using var _ = UiLagMonitor.Step("Duplicate check", 150);
+        return Duplicates.Find(Library.Games.ToList(), Settings.NotDuplicates);
+    }
 
     [RelayCommand]
     private void ShowDuplicates()
@@ -104,7 +108,8 @@ public partial class MainViewModel
                 try { e = StoreScanner.ScanEpicInstalled(); } catch { e = new List<DetectedGame>(); }
                 return (o, s, e);
             });
-            var result = ApplyOwned(owned, steamInstalled, epicInstalled);
+            OwnedSyncResult result;
+            using (UiLagMonitor.Step("Owned games: apply", 150)) result = ApplyOwned(owned, steamInstalled, epicInstalled);
             if (result.Added.Count > 0 || result.Moved > 0) Library.SaveNow();
             if (result.Added.Count > 0 && Settings.AutoFetchMetadata)
                 foreach (var g in result.Added) Metadata.Enqueue(g);

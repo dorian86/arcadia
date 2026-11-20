@@ -281,7 +281,7 @@ public partial class MainViewModel : ObservableObject
 
     public void Initialize()
     {
-        Library.Load();
+        using (UiLagMonitor.Step("startup: Library.Load", 0)) Library.Load();
         Refresh();
         Metadata.QueueEmptied += () => IsFetchingMetadata = false;
         var pending = Library.Games.Where(g => g.MetadataState == MetadataState.Pending).ToList();
@@ -413,6 +413,12 @@ public partial class MainViewModel : ObservableObject
     }
 
     public void Refresh()
+    {
+        using var _ = UiLagMonitor.Step($"Refresh {Section}", 150);
+        RefreshCore();
+    }
+
+    private void RefreshCore()
     {
         var everything = Library.Games.ToList();
         var all = everything.Where(g => g.IsShown).ToList();
@@ -1068,7 +1074,8 @@ public partial class MainViewModel : ObservableObject
         try
         {
             var found = await Task.Run(StoreScanner.ScanAll);
-            var fresh = found.Where(d => !Importer.IsInLibrary(d) && !Settings.IgnoredDetections.Contains(d.Key)).ToList();
+            var inLibrary = Importer.LibraryChecker();
+            var fresh = found.Where(d => !inLibrary(d) && !Settings.IgnoredDetections.Contains(d.Key)).ToList();
             if (fresh.Count == 0) return;
             // the first-launch assistant already offers them (step "Tes jeux")
             if (!Settings.OnboardingDone || Dialogs.OfType<OnboardingViewModel>().Any()) return;

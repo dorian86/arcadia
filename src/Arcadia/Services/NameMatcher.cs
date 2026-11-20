@@ -30,10 +30,28 @@ public static partial class NameMatcher
         return sb.ToString().Normalize(NormalizationForm.FormC);
     }
 
+    // Keys are asked for the same names again and again (every refresh of a 1000-game library): remembered.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> MatchKeys = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> SearchKeys = new();
+
+    private static string Remember(System.Collections.Concurrent.ConcurrentDictionary<string, string> cache, string s, Func<string, string> compute)
+    {
+        if (cache.TryGetValue(s, out var known)) return known;
+        if (cache.Count > 50_000) cache.Clear();
+        var value = compute(s);
+        cache[s] = value;
+        return value;
+    }
+
     /// <summary>Lowercase, accent-free, punctuation-free, roman numerals as digits, no leading "the".</summary>
     public static string MatchKey(string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return "";
+        return Remember(MatchKeys, s, ComputeMatchKey);
+    }
+
+    private static string ComputeMatchKey(string s)
+    {
         var x = RemoveDiacritics(s.ToLowerInvariant()).Replace("&", " and ");
         x = NonAlnum().Replace(x, " ");
         var tokens = x.Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -50,6 +68,11 @@ public static partial class NameMatcher
     public static string SearchKey(string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return "";
+        return Remember(SearchKeys, s, ComputeSearchKey);
+    }
+
+    private static string ComputeSearchKey(string s)
+    {
         var x = RemoveDiacritics(s.ToLowerInvariant());
         return NonAlnum().Replace(x, " ").Trim();
     }

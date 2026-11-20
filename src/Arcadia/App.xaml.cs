@@ -159,14 +159,18 @@ public partial class App : Application
         if (!options.IsDeveloperRun && settings.Settings.StartWithWindows != InstallService.StartsWithWindows)
             InstallService.SetStartWithWindows(settings.Settings.StartWithWindows);
 
+        UiLagMonitor.Start(Dispatcher);
+        var startup = System.Diagnostics.Stopwatch.StartNew();
         _vm = new MainViewModel(settings);
         _vm.AccentChanged += name => ThemeService.Apply(Resources, name);
         _vm.Sound.Initialize();
-        _vm.Initialize();
+        using (UiLagMonitor.Step("startup: Initialize", 0)) _vm.Initialize();
         if (options.UpdatedFrom != null) _vm.AnnounceUpdated();
         if (!options.IsDeveloperRun) _ = _vm.ShowWhatsNewAsync();
 
-        var window = new MainWindow(_vm);
+        MainWindow window;
+        using (UiLagMonitor.Step("startup: MainWindow", 0)) window = new MainWindow(_vm);
+        window.ContentRendered += (_, _) => Log.Info($"[timing] startup: first frame after {startup.ElapsedMilliseconds} ms ({_vm.Library.Games.Count} games)");
         if (options.Size is Size size)
         {
             window.WindowState = WindowState.Normal;
@@ -384,7 +388,7 @@ public partial class App : Application
         }
         if (o.Perf)
         {
-            var result = await PerfProbe.RunAsync(window);
+            var result = await PerfProbe.RunAsync(window) + " | " + await PerfProbe.NavigationAsync(window, vm);
             Log.Info(result);
             File.WriteAllText(o.Snapshot + ".perf.txt", result);
         }

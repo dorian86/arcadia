@@ -21,6 +21,11 @@ public sealed class GameRow
     public IReadOnlyList<Game> Items { get; }
     public int Columns { get; }
     public double Gap { get; }
+
+    /// <summary>Same games in the same order, same layout: the row on screen can be kept.</summary>
+    public bool SameAs(GameRow other) =>
+        Columns == other.Columns && Gap.Equals(other.Gap) && Margin == other.Margin
+        && Items.Count == other.Items.Count && Items.SequenceEqual(other.Items);
 }
 
 /// <summary>
@@ -113,8 +118,9 @@ public class GameGrid : Control
         var columns = ComputeColumns();
         if (columns == 0) return;
         if (!force && columns == _columns) return;
-        _columns = columns;
 
+        var columnsChanged = columns != _columns;
+        _columns = columns;
         var games = Games ?? Array.Empty<Game>();
         var rows = new List<GameRow>((games.Count + columns - 1) / columns);
         for (var i = 0; i < games.Count; i += columns)
@@ -128,8 +134,27 @@ public class GameGrid : Control
                 i + columns >= games.Count ? Padding.Bottom : 0);
             rows.Add(new GameRow(slice, columns, Gap, margin));
         }
-        _host.ItemsSource = rows;
+
+        // Same width: only the rows that changed are replaced (a renamed game, a new cover…), so the cards
+        // already on screen are kept instead of being rebuilt — 1000-game libraries stay fluid.
+        if (!columnsChanged && _rows != null && ReferenceEquals(_host.ItemsSource, _rows))
+        {
+            for (var i = 0; i < rows.Count; i++)
+            {
+                if (i < _rows.Count)
+                {
+                    if (!_rows[i].SameAs(rows[i])) _rows[i] = rows[i];
+                }
+                else _rows.Add(rows[i]);
+            }
+            while (_rows.Count > rows.Count) _rows.RemoveAt(_rows.Count - 1);
+            return;
+        }
+        _rows = new System.Collections.ObjectModel.ObservableCollection<GameRow>(rows);
+        _host.ItemsSource = _rows;
     }
+
+    private System.Collections.ObjectModel.ObservableCollection<GameRow>? _rows;
 }
 
 /// <summary>Turns the grid gap into the margin of each card cell.</summary>

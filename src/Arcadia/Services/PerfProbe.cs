@@ -44,6 +44,24 @@ public static class PerfProbe
         return $"PERF fps={fps:0.0} worstFrame={worst:0}ms renderTier={tier} frames={frames}";
     }
 
+    /// <summary>Time to show each page (until the interface is idle again), and to type a search.</summary>
+    public static async Task<string> NavigationAsync(Window window, ViewModels.MainViewModel vm)
+    {
+        var lines = new List<string>();
+        async Task<long> Measure(Action action)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            action();
+            await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            return sw.ElapsedMilliseconds;
+        }
+        foreach (var section in new[] { ViewModels.Section.All, ViewModels.Section.NotInstalled, ViewModels.Section.Home, ViewModels.Section.Stats, ViewModels.Section.All, ViewModels.Section.Favorites })
+            lines.Add($"{section}={await Measure(() => vm.NavigateCommand.Execute(section))}ms");
+        foreach (var text in new[] { "h", "ho", "hol", "" })
+            lines.Add($"search '{text}'={await Measure(() => { vm.SearchText = text; vm.Refresh(); })}ms");
+        return "PERF navigation " + string.Join(" ", lines);
+    }
+
     private static IEnumerable<ScrollViewer> FindScrollViewers(DependencyObject root)
     {
         var count = VisualTreeHelper.GetChildrenCount(root);

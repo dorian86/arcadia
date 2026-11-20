@@ -115,29 +115,51 @@ public sealed partial class ImportService
     }
 
     /// <summary>True when a game found by the store scan is already in the library.</summary>
-    public bool IsInLibrary(DetectedGame d)
+    public bool IsInLibrary(DetectedGame d) => LibraryChecker()(d);
+
+    /// <summary>
+    /// "Already in the library?" for many detected games at once: the library is indexed once (a 1000-game
+    /// library against 1000 detections stays instant instead of a million comparisons).
+    /// </summary>
+    public Func<DetectedGame, bool> LibraryChecker()
     {
-        foreach (var g in _library.Games)
+        var games = _library.Games.ToList();
+        var steam = games.Where(g => g.SteamAppId != null).Select(g => g.SteamAppId!.Value).ToHashSet();
+        var storeIds = games.Where(g => g.StoreId != null).Select(g => g.StoreId!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // same target and arguments (Battle.net / Riot games all start through their launcher, with different arguments)
+        var targets = games.Select(g => $"{g.LaunchTarget}|{(g.Arguments ?? "").Trim()}").ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var exes = games.Select(g => g.TargetPath ?? g.LaunchTarget).Where(p => !string.IsNullOrEmpty(p)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // every folder that contains the exe of a game (to recognise "this install folder holds a known game")
+        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var g in games)
         {
-            if (d.SteamAppId != null && g.SteamAppId == d.SteamAppId) return true;
-            if (d.StoreId != null && string.Equals(g.StoreId, d.StoreId, StringComparison.OrdinalIgnoreCase)) return true;
-            // same target and arguments (Battle.net / Riot games all start through their launcher, with different arguments)
-            if (string.Equals(g.LaunchTarget, d.LaunchTarget, StringComparison.OrdinalIgnoreCase)
-                && string.Equals((g.Arguments ?? "").Trim(), (d.Arguments ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) return true;
-            if (d.Executable != null && string.Equals(g.TargetPath ?? g.LaunchTarget, d.Executable, StringComparison.OrdinalIgnoreCase)) return true;
-            if (d.InstallDir != null && g.TargetPath != null && g.TargetPath.StartsWith(d.InstallDir.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)) return true;
-            if (NameMatcher.Compact(g.Name) == NameMatcher.Compact(d.Name) && (g.Store == d.Store || g.SourceKind == GameSourceKind.Shortcut && string.IsNullOrWhiteSpace(g.TargetPath))) return true;
+            if (string.IsNullOrEmpty(g.TargetPath) || LaunchHelper.IsUri(g.TargetPath)) continue;
+            var dir = Path.GetDirectoryName(g.TargetPath);
+            for (var i = 0; i < 8 && !string.IsNullOrEmpty(dir); i++, dir = Path.GetDirectoryName(dir)) folders.Add(dir.TrimEnd('\\'));
         }
-        return false;
+        var names = games.GroupBy(g => NameMatcher.Compact(g.Name)).ToDictionary(g => g.Key, g => g.ToList());
+
+        return d =>
+        {
+            if (d.SteamAppId is int id && steam.Contains(id)) return true;
+            if (d.StoreId != null && storeIds.Contains(d.StoreId)) return true;
+            if (targets.Contains($"{d.LaunchTarget}|{(d.Arguments ?? "").Trim()}")) return true;
+            if (d.Executable != null && exes.Contains(d.Executable)) return true;
+            if (d.InstallDir != null && folders.Contains(d.InstallDir.TrimEnd('\\'))) return true;
+            return names.TryGetValue(NameMatcher.Compact(d.Name), out var same)
+                   && same.Any(g => g.Store == d.Store || g.SourceKind == GameSourceKind.Shortcut && string.IsNullOrWhiteSpace(g.TargetPath));
+        };
     }
 
     /// <summary>Adds games detected in store launchers (Steam, Epic, GOG, Ubisoft, Xbox).</summary>
     public async Task<List<Game>> ImportDetectedAsync(IEnumerable<DetectedGame> detected)
     {
         var added = new List<(Game, string?)>();
+        var inLibrary = LibraryChecker();
+        var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // the same game twice in the list
         foreach (var d in detected)
         {
-            if (IsInLibrary(d)) continue;
+            if (inLibrary(d) || !taken.Add($"{d.LaunchTarget}|{d.Arguments}")) continue;
             var isExe = !LaunchHelper.IsUri(d.LaunchTarget);
             var game = new Game
             {

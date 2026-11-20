@@ -103,6 +103,12 @@ public partial class MainViewModel
 
     private void CheckTrophies()
     {
+        using var _ = UiLagMonitor.Step("Trophy check", 150);
+        CheckTrophiesCore();
+    }
+
+    private void CheckTrophiesCore()
+    {
         try
         {
             var firstTime = !Trophies.Initialized;

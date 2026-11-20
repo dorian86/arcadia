@@ -135,8 +135,9 @@ public partial class ScanViewModel : ObservableObject
         }
         if (_closed) return;
 
+        var inLibrary = _main.Importer.LibraryChecker();
         var entries = found.DistinctBy(d => (d.Executable ?? d.LaunchTarget).ToLowerInvariant())
-                           .Select(d => new ScanEntry(d, _main.Importer.IsInLibrary(d))).ToList();
+                           .Select(d => new ScanEntry(d, inLibrary(d))).ToList();
         // the same game in two folders (or already in the library under another form): only one is checked
         var names = _main.Library.Games.Select(g => NameMatcher.Compact(g.Name)).Where(n => n.Length >= 3).ToHashSet();
         foreach (var e in entries.Where(e => !e.InLibrary).OrderBy(e => e.Game.Uncertain).ThenByDescending(e => e.Game.Score))
@@ -161,9 +162,10 @@ public partial class ScanViewModel : ObservableObject
     private void Fill(List<DetectedGame> found)
     {
         Groups.Clear();
+        var inLibrary = _main.Importer.LibraryChecker();
         foreach (var group in found.GroupBy(g => g.Store).OrderBy(g => g.Key))
         {
-            var entries = group.Select(d => new ScanEntry(d, _main.Importer.IsInLibrary(d)))
+            var entries = group.Select(d => new ScanEntry(d, inLibrary(d)))
                                .OrderBy(e => e.InLibrary).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
             foreach (var e in entries) e.PropertyChanged += (_, _) => UpdateCount();
             Groups.Add(new ScanGroup { Label = StoreInfo.Label(group.Key), Glyph = StoreInfo.Glyph(group.Key), Entries = entries });

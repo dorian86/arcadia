@@ -30,6 +30,28 @@ public class DuplicateTests
     }
 
     [Fact]
+    public void AnExeDeepInsideAnotherGamesFolder()
+    {
+        var store = G("Stray", "steam://rungameid/1332010", GameStore.Steam, installDir: @"D:\Steam\steamapps\common\Stray", steam: 1332010);
+        var exe = G("Hk_project", @"D:\Steam\steamapps\common\Stray\Hk_project\Binaries\Win64\Stray-Win64-Shipping.exe");
+        var other = G("Other", @"D:\Steam\steamapps\common\Strayed\other.exe");
+        var group = Assert.Single(Duplicates.Find(new[] { store, exe, other }));
+        Assert.Equal(2, group.Count);
+        Assert.DoesNotContain(other, group);
+    }
+
+    [Fact]
+    public void ALargeLibraryIsCheckedQuickly()
+    {
+        var games = Enumerable.Range(0, 3000)
+            .Select(i => G($"Game {i}", $@"E:\Jeux\Game {i}\game{i}.exe", installDir: $@"E:\Jeux\Game {i}"))
+            .ToList();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Assert.Empty(Duplicates.Find(games));
+        Assert.True(sw.ElapsedMilliseconds < 2000, $"{sw.ElapsedMilliseconds} ms");
+    }
+
+    [Fact]
     public void TheFolderOfShortcutsIsNotAGameFolder()
     {
         var cod = G("Call of Duty", @"C:\Users\x\AppData\Roaming\Arcadia\shortcuts\a.lnk", GameStore.Xbox, installDir: @"C:\Users\x\AppData\Roaming\Arcadia\shortcuts");

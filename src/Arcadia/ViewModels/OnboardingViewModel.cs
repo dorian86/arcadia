@@ -107,7 +107,8 @@ public partial class OnboardingViewModel : ObservableObject
         try
         {
             var all = await Task.Run(StoreScanner.ScanAll);
-            _found = all.Where(d => !_main.Importer.IsInLibrary(d) && !_main.Settings.IgnoredDetections.Contains(d.Key)).ToList();
+            var inLibrary = _main.Importer.LibraryChecker();
+            _found = all.Where(d => !inLibrary(d) && !_main.Settings.IgnoredDetections.Contains(d.Key)).ToList();
             Launchers = _found.GroupBy(d => d.Store).OrderByDescending(g => g.Count())
                 .Select(g => new LauncherCount(StoreInfo.Label(g.Key), StoreInfo.Glyph(g.Key), g.Count())).ToList();
             NewCount = _found.Count;

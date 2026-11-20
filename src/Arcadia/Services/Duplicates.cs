@@ -44,13 +44,22 @@ public static class Duplicates
         // same name, except two emulated games (the same title on two consoles)
         ByKey(g => g.Store != GameStore.Emulator && NameMatcher.Compact(g.Name) is { Length: >= 3 } n ? "name|" + n : null);
 
-        // an exe inside another game's folder
-        var folders = games.Select((g, i) => (Dir: FolderOf(g), Index: i)).Where(x => x.Dir != null).ToList();
+        // an exe inside another game's folder (walks up the exe's folders: no game × game comparison)
+        var folders = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < games.Count; i++)
+            if (FolderOf(games[i]) is { } dir)
+            {
+                if (!folders.TryGetValue(dir, out var list)) folders[dir] = list = new List<int>();
+                list.Add(i);
+            }
+        for (var i = 0; i < games.Count && folders.Count > 0; i++)
         {
             if (ExeOf(games[i]) is not { } exe) continue;
-            foreach (var (dir, j) in folders)
-                if (j != i && exe.StartsWith(dir + "\\", StringComparison.OrdinalIgnoreCase)) Join(j, i);
+            var up = Path.GetDirectoryName(exe);
+            for (var depth = 0; depth < 8 && !string.IsNullOrEmpty(up); depth++, up = Path.GetDirectoryName(up))
+                if (folders.TryGetValue(up.TrimEnd('\\'), out var owners))
+                    foreach (var j in owners)
+                        if (j != i) Join(j, i);
         }
 
         return Enumerable.Range(0, games.Count)
