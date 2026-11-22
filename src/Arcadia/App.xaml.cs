@@ -49,6 +49,7 @@ public partial class App : Application
         public string? Mouse;
         public int Scroll;
         public int Select;
+        public string? StatsPeriod;
         public bool Tray;
         public bool Uninstall;
         public bool Tv;
@@ -86,6 +87,7 @@ public partial class App : Application
                     case "--mouse": o.Mouse = Next(); break;
                     case "--scroll": int.TryParse(Next(), out o.Scroll); break;
                     case "--select": int.TryParse(Next(), out o.Select); break;
+                    case "--stats-period": o.StatsPeriod = Next(); break;
                     case "--tray": o.Tray = true; break;
                     case "--uninstall": o.Uninstall = true; break;
                     case "--tv": o.Tv = true; break;
@@ -319,6 +321,8 @@ public partial class App : Application
 
         if (o.Theme != null)
             foreach (var theme in o.Theme.Split('+')) { vm.ApplyUiTheme(theme); await Task.Delay(700); } // "switch+ps5": several themes in a row
+        // --stats-period day|week|month|year|all (and --stats-date yyyy-mm-dd is not needed: today)
+        if (o.StatsPeriod != null && Enum.TryParse<Services.StatsPeriod>(o.StatsPeriod, true, out var period)) vm.PeriodStats.Kind = period;
         if (o.Section != null && Enum.TryParse<Section>(o.Section, true, out var section)) vm.Section = section;
         await Task.Delay(400);
         if (o.Detail is int index && vm.VisibleGames.Count > 0)

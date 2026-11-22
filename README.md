@@ -30,6 +30,7 @@ Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, d
 - 🧹 **Jeux en double** détectés (deux dossiers, un raccourci et le launcher…) et fusionnés en un clic, sans perdre le temps de jeu.
 - 🖼️ **Jaquettes, illustrations et logos** trouvés tout seuls, avec le vrai nom de chaque jeu, même à partir d'un raccourci nommé `GTA5.exe - Raccourci`.
 - ⏱️ **Temps de jeu sur toutes les plateformes** : mesuré par Arcadia, même pour les jeux lancés depuis Steam, Epic, l'EA app, Battle.net ou un raccourci, et reprise de votre historique Steam.
+- 📊 **Statistiques détaillées** : temps de jeu, sessions et jeux lancés par jour, semaine, mois ou année, avec la comparaison à la période précédente, tes jeux de la période et tes horaires de jeu.
 - 📊 **En ce moment sur Steam** dans la fiche : joueurs en ligne, prix et promo, Metacritic, avec des liens vers SteamDB et HowLongToBeat.
 - 📰 **Actualités** de chaque jeu dans sa fiche : les dernières annonces officielles (mises à jour, événements).
 - 🏅 **Trophées Arcadia** pour tous vos jeux (temps de jeu, jeux terminés, séries de jours…) et **« Ton année de jeu »**, le récap de votre année : jeu de l'année, top 5, mois par mois, records.

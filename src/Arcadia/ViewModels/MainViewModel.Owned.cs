@@ -19,6 +19,15 @@ public partial class MainViewModel
                              : $"{games} dans vos launchers";
     }
 
+    /// <summary>Statistics by day / week / month / year; the chosen period stays while Arcadia is open.</summary>
+    public PeriodStatsViewModel PeriodStats { get; } = new();
+
+    private StatsViewModel BuildStats(List<Game> games)
+    {
+        PeriodStats.Update(games);
+        return new StatsViewModel(games, BuildTrophyItems()) { Period = PeriodStats };
+    }
+
     /// <summary>Key remembered when a game of a launcher's library is removed (never added again).</summary>
     public static string OwnedKey(Game g) => $"{g.Store}:{g.StoreId ?? g.SteamAppId?.ToString()}".ToLowerInvariant();
 

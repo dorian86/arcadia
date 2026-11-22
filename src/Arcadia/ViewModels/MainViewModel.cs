@@ -363,7 +363,7 @@ public partial class MainViewModel : ObservableObject
         if (value is Section.Home or Section.Settings or Section.Stats && !string.IsNullOrEmpty(SearchText)) SearchText = "";
         DetailGame = null;
         ClearSelection();
-        if (value == Section.Stats) Stats = new StatsViewModel(Library.Games.ToList(), BuildTrophyItems());
+        if (value == Section.Stats) Stats = BuildStats(Library.Games.ToList());
         OnPropertyChanged(nameof(IsLibrarySection));
         OnPropertyChanged(nameof(ShowMissingFilter));
         OnPropertyChanged(nameof(IsCollectionSection));
@@ -503,7 +503,7 @@ public partial class MainViewModel : ObservableObject
         if (!featured.SequenceEqual(FeaturedGames)) FeaturedGames = featured;
         if (FeaturedGame == null || !featured.Contains(FeaturedGame)) FeaturedGame = featured.FirstOrDefault();
 
-        if (Section == Section.Stats) Stats = new StatsViewModel(everything, BuildTrophyItems());
+        if (Section == Section.Stats) Stats = BuildStats(everything);
 
         OnPropertyChanged(nameof(HasGames));
         if (IsShellTheme) Shell?.Rebuild();

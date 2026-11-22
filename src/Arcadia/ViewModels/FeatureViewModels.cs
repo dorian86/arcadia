@@ -462,6 +462,9 @@ public sealed class StatsViewModel
     public bool HasActivity { get; }
     public List<BarItem> Platforms { get; }
 
+    /// <summary>"Ton activité": per day / week / month / year (kept by MainViewModel so the chosen period stays).</summary>
+    public PeriodStatsViewModel? Period { get; init; }
+
     // ---- Arcadia trophies ----
     public List<TrophyItem> Trophies { get; }
     public bool HasTrophies => Trophies.Count > 0;
