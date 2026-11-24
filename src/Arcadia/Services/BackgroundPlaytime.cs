@@ -20,6 +20,10 @@ public sealed class BackgroundPlaytime : IDisposable
     private readonly Dictionary<Game, DateTime> _active = new();
     private bool _busy;
 
+    /// <summary>False for the games whose play time is kept by their platform (Steam, Epic): the session is still
+    /// recorded for the activity stats, but its time is not added to the total.</summary>
+    public Func<Game, bool> CountsPlayTime { get; set; } = _ => true;
+
     public BackgroundPlaytime(Func<IReadOnlyList<Game>> games, Action changed)
     {
         _games = games;
@@ -139,7 +143,7 @@ public sealed class BackgroundPlaytime : IDisposable
         _active.Remove(game);
         var seconds = (long)(end - start).TotalSeconds;
         if (seconds < MinSeconds) return;
-        game.PlayTimeSeconds += seconds;
+        if (CountsPlayTime(game)) game.PlayTimeSeconds += seconds;
         game.Sessions.Add(new PlaySession { Start = start, Seconds = seconds });
         if (game.Sessions.Count > 1000) game.Sessions.RemoveAt(0);
         if (game.LastPlayedAt == null || start > game.LastPlayedAt) game.LastPlayedAt = start;

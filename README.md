@@ -29,7 +29,7 @@ Vos jeux sont éparpillés entre Steam, Epic, GOG, Ubisoft, le Xbox Game Pass, d
 - 📚 **Toute votre bibliothèque, même non installée** : les jeux de vos bibliothèques Steam (famille comprise) et Epic Games que vous n'avez pas installés, avec leurs heures de jeu, rangés à part dans *Tous les jeux → Non installés*. Ils rejoignent les autres dès que vous les installez.
 - 🧹 **Jeux en double** détectés (deux dossiers, un raccourci et le launcher…) et fusionnés en un clic, sans perdre le temps de jeu.
 - 🖼️ **Jaquettes, illustrations et logos** trouvés tout seuls, avec le vrai nom de chaque jeu, même à partir d'un raccourci nommé `GTA5.exe - Raccourci`.
-- ⏱️ **Temps de jeu sur toutes les plateformes** : mesuré par Arcadia, même pour les jeux lancés depuis Steam, Epic, l'EA app, Battle.net ou un raccourci, et reprise de votre historique Steam.
+- ⏱️ **Temps de jeu sur toutes les plateformes** : pour les jeux Steam et Epic Games, c'est exactement celui de la plateforme, synchronisé tout seul. Pour les autres (EA app, Battle.net, Ubisoft, Xbox, raccourcis, `.exe`), Arcadia le mesure lui-même, même quand le jeu est lancé hors d'Arcadia.
 - 📊 **Statistiques détaillées** : temps de jeu, sessions et jeux lancés par jour, semaine, mois ou année, avec la comparaison à la période précédente, tes jeux de la période et tes horaires de jeu.
 - 📊 **En ce moment sur Steam** dans la fiche : joueurs en ligne, prix et promo, Metacritic, avec des liens vers SteamDB et HowLongToBeat.
 - 📰 **Actualités** de chaque jeu dans sa fiche : les dernières annonces officielles (mises à jour, événements).

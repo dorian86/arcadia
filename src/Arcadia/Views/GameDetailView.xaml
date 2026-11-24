@@ -262,6 +262,7 @@
                                     <TextBlock Text="TEMPS DE JEU" Style="{StaticResource StatLabel}"/>
                                 </StackPanel>
                                 <TextBlock Text="{Binding PlayTimeText}" Style="{StaticResource StatValue}"/>
+                                <TextBlock Text="{Binding PlayTimeSourceText}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource StatCard}">

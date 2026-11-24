@@ -17,13 +17,9 @@ public partial class MainViewModel
     private void InitializeFeatures()
     {
         // newly identified Steam games: pick up their Steam play time as soon as identification is done
-        Metadata.QueueEmptied += () => { if (Settings.ImportSteamPlaytime) _ = SyncSteamPlaytimeAsync(silent: true); };
+        Metadata.QueueEmptied += () => { if (Settings.ImportSteamPlaytime) _ = SyncPlatformPlaytimeAsync(silent: true); };
         _ = GenerateMissingCoversAsync();
-        if (Settings.ImportSteamPlaytime)
-        {
-            _ = SyncSteamPlaytimeAsync(silent: true);
-            _ = SyncEpicPlaytimeAsync(silent: true);
-        }
+        StartPlatformPlaytimeSync();
         _ = RefreshEmulatorsAsync();
         _ = BuildAllTilesAsync();
         _ = LookUpMissingAchievementsAsync();
@@ -36,10 +32,12 @@ public partial class MainViewModel
         _backgroundPlaytime = new BackgroundPlaytime(() => Library.Games.ToList(), () => Library.ScheduleSave())
         {
             Enabled = Settings.TrackOutsidePlaytime,
+            CountsPlayTime = ArcadiaCountsPlayTime,
         };
         Settings.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(AppSettings.TrackOutsidePlaytime)) _backgroundPlaytime.Enabled = Settings.TrackOutsidePlaytime;
+            if (e.PropertyName == nameof(AppSettings.ImportSteamPlaytime) && Settings.ImportSteamPlaytime) _ = SyncPlatformPlaytimeAsync(silent: true);
         };
     }
 
@@ -259,14 +257,51 @@ public partial class MainViewModel
     }
 
     // ------------------------------------------------------------------------------------
-    // Steam play time
+    // Play time of the platforms (Steam, Epic Games)
     // ------------------------------------------------------------------------------------
 
-    [RelayCommand]
-    private async Task ImportSteamPlaytime()
+    private DispatcherTimer? _platformPlaytimeTimer;
+    private bool _platformSyncRunning;
+
+    /// <summary>
+    /// Arcadia adds its own measure only to the games whose platform does not keep their hours on this PC. The hours
+    /// of Steam and Epic games are the platform's (see <see cref="PlatformPlaytime"/>).
+    /// </summary>
+    private bool ArcadiaCountsPlayTime(Game g) => !(Settings.ImportSteamPlaytime && g.PlaytimeSource is not null);
+
+    /// <summary>Copies the hours of Steam and Epic now, then every 5 minutes and shortly after one of their games closes.</summary>
+    private void StartPlatformPlaytimeSync()
     {
-        await SyncSteamPlaytimeAsync(silent: false);
-        await SyncEpicPlaytimeAsync(silent: false);
+        Launcher.CountsPlayTime = ArcadiaCountsPlayTime;
+        _platformPlaytimeTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
+        _platformPlaytimeTimer.Tick += (_, _) => { if (Settings.ImportSteamPlaytime) _ = SyncPlatformPlaytimeAsync(silent: true); };
+        _platformPlaytimeTimer.Start();
+        if (Settings.ImportSteamPlaytime) _ = SyncPlatformPlaytimeAsync(silent: true);
+    }
+
+    /// <summary>A Steam / Epic game was closed: the platform writes its hours a little later.</summary>
+    private async Task SyncPlatformPlaytimeSoonAsync(Game game)
+    {
+        if (game.PlaytimeSource is null || !Settings.ImportSteamPlaytime) return;
+        await Task.Delay(TimeSpan.FromSeconds(30));
+        await SyncPlatformPlaytimeAsync(silent: true);
+        await Task.Delay(TimeSpan.FromMinutes(2));
+        await SyncPlatformPlaytimeAsync(silent: true);
+    }
+
+    [RelayCommand]
+    private Task ImportSteamPlaytime() => SyncPlatformPlaytimeAsync(silent: false);
+
+    private async Task SyncPlatformPlaytimeAsync(bool silent)
+    {
+        if (_platformSyncRunning && silent) return;
+        _platformSyncRunning = true;
+        try
+        {
+            await SyncSteamPlaytimeAsync(silent);
+            await SyncEpicPlaytimeAsync(silent);
+        }
+        finally { _platformSyncRunning = false; }
     }
 
     private async Task SyncSteamPlaytimeAsync(bool silent)
@@ -280,25 +315,20 @@ public partial class MainViewModel
                 return;
             }
             var updated = 0;
-            long added = 0;
             foreach (var g in Library.Games)
             {
-                if (g.SteamAppId is not int id || !data.TryGetValue(id, out var usage)) continue;
-                g.SteamPlayTimeSeconds = usage.Seconds;
-                // Steam also counts sessions started from Arcadia: keep the larger value, never add both
-                if (usage.Seconds > g.PlayTimeSeconds)
-                {
-                    added += usage.Seconds - g.PlayTimeSeconds;
-                    g.PlayTimeSeconds = usage.Seconds;
-                    updated++;
-                }
-                if (usage.LastPlayed is DateTime last && (g.LastPlayedAt == null || last > g.LastPlayedAt.Value.AddMinutes(1)))
+                if (PlatformPlaytime.SteamIdOf(g) is not int id || !PlatformPlaytime.IsSteamCopy(g)) continue;
+                var usage = data.GetValueOrDefault(id);
+                g.SteamPlayTimeSeconds = usage?.Seconds ?? 0;
+                // Steam's figure as it is: it already counts the sessions started from Arcadia
+                if (PlatformPlaytime.Apply(g, GameStore.Steam, usage?.Seconds ?? 0) != 0) updated++;
+                if (usage?.LastPlayed is DateTime last && (g.LastPlayedAt == null || last > g.LastPlayedAt.Value.AddMinutes(1)))
                     g.LastPlayedAt = last;
             }
-            if (!silent || added >= 3600)
-                ShowToast(updated == 0
-                    ? "Temps de jeu Steam déjà à jour"
-                    : $"Temps de jeu Steam importé : +{Format.Duration(added)} sur {updated} jeu(x)", ToastKind.Success);
+            if (updated > 0) Log.Info($"Steam play time synchronised on {updated} game(s)");
+            if (!silent)
+                ShowToast(updated == 0 ? "Temps de jeu Steam déjà à jour"
+                    : $"Temps de jeu Steam synchronisé sur {updated} jeu(x)", ToastKind.Success);
         }
         catch (Exception ex)
         {
@@ -325,7 +355,8 @@ public partial class MainViewModel
                 {
                     var app = g.Store == GameStore.Epic && g.StoreId != null && playtime.ContainsKey(g.StoreId) ? g.StoreId
                               : EpicLauncher.FromGameFolder(!string.IsNullOrWhiteSpace(g.InstallDir) ? g.InstallDir
-                                                            : g.TargetPath is { Length: > 0 } t ? t : g.LaunchTarget)?.AppName;
+                                                            : g.TargetPath is { Length: > 0 } t ? t : g.LaunchTarget)?.AppName
+                                ?? (g.Store == GameStore.Epic ? g.StoreId : null);
                     if (app != null) map[g] = app;
                 }
                 return (playtime, map);
@@ -336,19 +367,15 @@ public partial class MainViewModel
                 return;
             }
             var updated = 0;
-            long added = 0;
             foreach (var (g, app) in ids)
             {
-                if (!data.TryGetValue(app, out var seconds) || seconds <= g.PlayTimeSeconds) continue;
-                // Epic also counts the sessions started from Arcadia: keep the larger value, never add both
-                added += seconds - g.PlayTimeSeconds;
-                g.PlayTimeSeconds = seconds;
-                updated++;
+                // Epic's figure as it is: it already counts the sessions started from Arcadia
+                if (PlatformPlaytime.Apply(g, GameStore.Epic, data.GetValueOrDefault(app)) != 0) updated++;
             }
-            if (updated > 0) Log.Info($"Epic play time imported: +{added}s on {updated} game(s)");
-            if (!silent || added >= 3600)
+            if (updated > 0) Log.Info($"Epic play time synchronised on {updated} game(s)");
+            if (!silent)
                 ShowToast(updated == 0 ? "Temps de jeu Epic déjà à jour"
-                    : $"Temps de jeu Epic importé : +{Format.Duration(added)} sur {updated} jeu(x)", ToastKind.Success);
+                    : $"Temps de jeu Epic synchronisé sur {updated} jeu(x)", ToastKind.Success);
         }
         catch (Exception ex)
         {

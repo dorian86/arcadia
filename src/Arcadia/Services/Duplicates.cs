@@ -116,7 +116,8 @@ public static class Duplicates
                 extra += s.Seconds;
             }
             keep.Sessions.Sort((a, b) => a.Start.CompareTo(b.Start));
-            keep.PlayTimeSeconds = Math.Max(Math.Max(keep.PlayTimeSeconds, o.PlayTimeSeconds), keep.PlayTimeSeconds + extra);
+            // the hours of a Steam / Epic game stay the platform's
+            if (keep.PlaytimeSource is null) keep.PlayTimeSeconds = Math.Max(Math.Max(keep.PlayTimeSeconds, o.PlayTimeSeconds), keep.PlayTimeSeconds + extra);
             keep.PlayCount += o.PlayCount;
             if (o.LastPlayedAt is DateTime last && (keep.LastPlayedAt == null || last > keep.LastPlayedAt)) keep.LastPlayedAt = last;
             if (o.AddedAt < keep.AddedAt) keep.AddedAt = o.AddedAt;

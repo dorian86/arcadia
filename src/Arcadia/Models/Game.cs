@@ -234,8 +234,23 @@ public partial class Game : ObservableObject
     [ObservableProperty] private string? _postExitCommand;
     [ObservableProperty] private WindowOnLaunch _windowOnLaunch;
 
-    /// <summary>Play time imported from Steam (already included in PlayTimeSeconds when larger).</summary>
+    /// <summary>Play time last read from Steam.</summary>
     public long SteamPlayTimeSeconds { get; set; }
+
+    /// <summary>
+    /// The platform that keeps this game's play time (Steam, Epic Games): Arcadia copies its hours and does not add
+    /// its own sessions to them. Null: the play time is measured by Arcadia.
+    /// </summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(PlayTimeSourceText))]
+    private GameStore? _playtimeSource;
+
+    [JsonIgnore]
+    public string PlayTimeSourceText => PlaytimeSource switch
+    {
+        GameStore.Steam => "selon Steam",
+        GameStore.Epic => "selon Epic Games",
+        _ => "mesuré par Arcadia",
+    };
 
     // ---- Artwork (paths relative to the data folder) --------------------------------
     [ObservableProperty, NotifyPropertyChangedFor(nameof(CoverFullPath), nameof(HasCover), nameof(WideArtPath), nameof(SquareTilePath), nameof(WideTilePath))]

@@ -16,6 +16,10 @@ public sealed class GameLauncher
 
     public event Action<Game>? GameExited;
 
+    /// <summary>False for the games whose play time is kept by their platform (Steam, Epic): the session is still
+    /// recorded for the activity stats, but its time is not added to the total.</summary>
+    public Func<Game, bool> CountsPlayTime { get; set; } = _ => true;
+
     public GameLauncher(Dispatcher ui) => _ui = ui;
 
     public static bool TargetExists(Game game)
@@ -136,7 +140,7 @@ public sealed class GameLauncher
             var seconds = (long)Math.Max(0, (DateTime.Now - sessionStart).TotalSeconds);
             await _ui.InvokeAsync(() =>
             {
-                game.PlayTimeSeconds += seconds;
+                if (CountsPlayTime(game)) game.PlayTimeSeconds += seconds;
                 if (seconds >= 10)
                 {
                     game.Sessions.Add(new PlaySession { Start = sessionStart, Seconds = seconds });

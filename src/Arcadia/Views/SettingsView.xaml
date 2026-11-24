@@ -235,11 +235,11 @@
                         </Grid.ColumnDefinitions>
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ImportSteamPlaytime}" Margin="0,0,16,0">
                             <StackPanel>
-                                <TextBlock Text="Importer le temps de jeu Steam et Epic Games" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Au démarrage, Arcadia reprend le temps de jeu enregistré sur ce PC par Steam (avec la date de dernière partie) et par le launcher Epic Games." Style="{StaticResource RowHint}"/>
+                                <TextBlock Text="Temps de jeu Steam et Epic Games synchronisé" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Pour les jeux Steam et Epic Games, le temps de jeu est celui de la plateforme : Arcadia le reprend au démarrage, toutes les 5 minutes et après chaque partie, sans y ajouter ses propres mesures. Désactivé, Arcadia mesure lui-même le temps de ces jeux." Style="{StaticResource RowHint}"/>
                             </StackPanel>
                         </CheckBox>
-                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Importer maintenant" c:Ui.Glyph="&#xE896;" Command="{Binding ImportSteamPlaytimeCommand}"/>
+                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Synchroniser maintenant" c:Ui.Glyph="&#xE895;" Command="{Binding ImportSteamPlaytimeCommand}"/>
                     </Grid>
                     <Border Style="{StaticResource Divider}"/>
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AchievementPopups}">
@@ -252,7 +252,7 @@
                     <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.TrackOutsidePlaytime}">
                         <StackPanel>
                             <TextBlock Text="Mesurer le temps de jeu des jeux lancés hors d'Arcadia" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="Tant qu'Arcadia est ouvert (même réduit dans la zone de notification), il reconnaît les jeux de votre bibliothèque lancés depuis Steam, Epic, l'EA app, Battle.net, Ubisoft, Xbox ou un raccourci, et ajoute leur temps de jeu. Xbox, EA, Ubisoft, Battle.net et Riot ne gardent pas ce temps sur votre PC : c'est la seule façon de le connaître." Style="{StaticResource RowHint}"/>
+                            <TextBlock Text="Tant qu'Arcadia est ouvert (même réduit dans la zone de notification), il reconnaît les jeux de votre bibliothèque lancés depuis Steam, Epic, l'EA app, Battle.net, Ubisoft, Xbox ou un raccourci, et mesure leur temps de jeu. Xbox, EA, Ubisoft, Battle.net, Riot et GOG ne gardent pas ce temps sur votre PC : c'est la seule façon de le connaître. Steam et Epic Games gardent le leur : Arcadia note seulement vos sessions pour les statistiques par période." Style="{StaticResource RowHint}"/>
                         </StackPanel>
                     </CheckBox>
                     <Border Style="{StaticResource Divider}"/>

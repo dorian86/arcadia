@@ -187,13 +187,13 @@ public partial class MainViewModel
                 moved++;
             }
 
-            // hours kept by the launcher (the larger value: Arcadia's own sessions are included in it)
+            // hours kept by the launcher, as they are (Arcadia's own sessions are included in them)
             OwnedGame? source = g.IsNotInstalled && steamLaunch ? ownedSteam.GetValueOrDefault(g.SteamAppId!.Value)
                               : g.IsNotInstalled && epicLaunch ? ownedEpic.GetValueOrDefault(g.StoreId!)
                               : null;
             if (source != null)
             {
-                if (source.Seconds > g.PlayTimeSeconds) { g.PlayTimeSeconds = source.Seconds; updated++; }
+                if (PlatformPlaytime.Apply(g, steamLaunch ? GameStore.Steam : GameStore.Epic, source.Seconds) != 0) updated++;
                 if (source.LastPlayed is DateTime last && (g.LastPlayedAt == null || last > g.LastPlayedAt)) g.LastPlayedAt = last;
             }
         }
@@ -221,6 +221,7 @@ public partial class MainViewModel
                 StoreId = o.StoreId,
                 IsNotInstalled = true,
                 PlayTimeSeconds = o.Seconds,
+                PlaytimeSource = o.Store,
                 LastPlayedAt = o.LastPlayed,
                 AddedAt = DateTime.Now,
                 MetadataState = MetadataState.Pending,

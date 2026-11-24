@@ -351,6 +351,7 @@ public partial class MainViewModel : ObservableObject
     private void OnGameExited(Game game)
     {
         _ = SyncSteamAchievementsAfterSessionAsync(game);
+        _ = SyncPlatformPlaytimeSoonAsync(game);
         if (_minimizedByLaunch && !Library.Games.Any(g => g.IsRunning))
         {
             _minimizedByLaunch = false;
